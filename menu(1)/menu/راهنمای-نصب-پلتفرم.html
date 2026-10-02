@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>راهنمای نصب GitiArts Menu Platform — نسخهٔ ۵</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Vazirmatn,sans-serif;background:#EFE7D6;color:#271D12;line-height:2;margin:0;padding:26px 14px}
+.c{max-width:700px;margin:0 auto}
+h1{font-size:19px;text-align:center;margin-bottom:4px}
+.sub{text-align:center;color:#7D6C54;font-size:12.5px;margin-bottom:18px}
+.card{background:#FBF6EB;border:1px solid #DFD2B6;border-radius:18px;padding:20px 22px;margin-bottom:14px}
+h2{font-size:14.5px;color:#B4531F;margin-bottom:8px}
+ol,ul{padding-right:20px}
+li{margin-bottom:4px}
+code{background:#F2EADA;border-radius:6px;padding:1px 7px;direction:ltr;display:inline-block;font-size:12px}
+.warn{background:rgba(176,124,31,.09);border:1px solid #B07C1F;border-radius:12px;padding:10px 14px;font-size:12.5px;margin-top:10px}
+.ok{background:rgba(79,122,61,.08);border:1px solid #4F7A3D;border-radius:12px;padding:10px 14px;font-size:12.5px;margin-top:10px}
+.flow{background:#F2EADA;border-radius:12px;padding:12px 16px;font-size:12.5px;margin-top:8px}
+.flow b{color:#B4531F}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+td,th{padding:6px 8px;border-bottom:1px dashed #DFD2B6;text-align:right}
+th{color:#B4531F}
+.muted{color:#7D6C54;font-size:12px}
+</style>
+</head>
+<body>
+<div class="c">
+  <h1>🌿 راهنمای نصب GitiArts Menu Platform</h1>
+  <p class="sub">نسخهٔ ۵٫۰٫۰ (آزمایشی) — بانک اطلاعاتی دودرایور · نصب خودکار · خروجی کنترل‌شده</p>
+
+  <div class="card">
+    <h2>۱) آپلود روی هاست</h2>
+    <ol>
+      <li>وارد <b>cPanel</b> شوید و <b>File Manager</b> را باز کنید.</li>
+      <li>به پوشه‌ای بروید که می‌خواهید پلتفرم آنجا نصب شود (مثلاً <code>public_html/menu</code>).</li>
+      <li>فایل زیپ را آپلود و <b>Extract</b> کنید. محتویات باید مستقیم داخل همان پوشه باشد (فایل <code>index.html</code> و <code>config.php</code> در ریشه).</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>۲) اجرای نصب خودکار</h2>
+    <ol>
+      <li>در مرورگر باز کنید: <code>https://دامنه‌شما/menu/setup.php</code></li>
+      <li><b>قدم ۱ — بررسی محیط:</b> همهٔ موارد باید سبز باشند. اگر موردی قرمز است از «Select PHP Version» در cPanel افزونه را فعال کنید.</li>
+      <li><b>قدم ۲ — رمز مدیر:</b> اول در فایل <code>config.php</code> مقدار <code>setup_key</code> را یک عبارت دلخواه بگذارید (مثلاً <code>'setup_key' => 'raaz-1234'</code>)، ذخیره کنید، سپس همان عبارت را در ویزارد وارد کنید و رمز مدیر پلتفرم را بسازید.</li>
+      <li><b>قدم ۳ — بانک داده:</b> «SQLite خودکار» را بزنید (پیشنهادی — صفر تنظیمات). اگر می‌خواهید MySQL باشد، در cPanel یک بانک بسازید و مشخصات را وارد کنید؛ اتصال تست و ذخیره می‌شود.</li>
+      <li>پایان! ویزارد خودش قفل می‌شود و <code>setup_key</code> خالی می‌گردد.</li>
+    </ol>
+    <div class="warn">🔒 بعد از نصب یک‌بار فایل <code>config.php</code> را چک کنید که <code>setup_key</code> خالی <code>''</code> باشد.</div>
+  </div>
+
+  <div class="card">
+    <h2>۲+) کافه‌های آمادهٔ داخل بسته (میران و مدیری)</h2>
+    <p>از این نسخه، دو کافهٔ زندهٔ شما <b>داخل خود بسته</b> ساخته و ثبت شده‌اند — پوشه‌های
+      <code>tenants/miran</code> و <code>tenants/modiri</code> با دیتای اولیهٔ سالم و منوی خالیِ
+      آمادهٔ طراح/اکسل. بعد از آپلود و نصب، برای هر کافه:</p>
+    <ol>
+      <li>وارد <code>tenants/&lt;slug&gt;/hub.php</code> شوید (ورود مدیر کافه).</li>
+      <li>مشخصات موقت ورود — میران: موبایل <code dir="ltr">09120000001</code> · مدیری: موبایل <code dir="ltr">09120000002</code> · رمز موقت هر دو: <code dir="ltr">Giti@1404</code></li>
+      <li>ویزارد راه‌اندازی را تمام کنید و <b>بلافاصله</b> از بخش کارکنان، موبایل و رمز را به مقدار واقعی عوض کنید.</li>
+      <li>منو را از طراح منو یا «درون‌ریزی از اکسل» بسازید (فایل نمونه: <code>منوی-نمونه-گیت‌آرتس.xlsx</code>).</li>
+    </ol>
+    <div class="warn">⚠️ رمز و شماره‌های موقت بالا فقط برای اولین ورود است — تغییرشان ندهید به کسی.
+      اگر کافه‌ای را از نو می‌سازید، ثبت‌نام جدید هم مثل قبل از <code>register.php</code> کار می‌کند.</div>
+  </div>
+
+  <div class="card">
+    <h2>۳) مسیرهای مهم</h2>
+    <table>
+      <tr><th>آدرس</th><th>کاربرد</th></tr>
+      <tr><td dir="ltr" style="text-align:left">/menu/setup.php</td><td>ویزارد نصب (بعد از نصب قفل می‌شود)</td></tr>
+      <tr><td dir="ltr" style="text-align:left">/menu/panel/</td><td>پنل مدیریت پلتفرم (مدیر: شما)</td></tr>
+      <tr><td dir="ltr" style="text-align:left">/menu/register.php</td><td>صفحهٔ ثبت‌نام کافه‌دارها</td></tr>
+      <tr><td dir="ltr" style="text-align:left">/menu/tenants/&lt;slug&gt;/</td><td>منوی عمومی هر کافه</td></tr>
+      <tr><td dir="ltr" style="text-align:left">/menu/tenants/&lt;slug&gt;/panel-admin.php</td><td>پنل مدیریت کافه</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>۴) جریان «فایل نصبی» (خروجی زیپ برای مشتری)</h2>
+    <div class="flow">
+      <b>مشتری</b> در پنل کافه‌اش → کارت «📦 فایل نصبی» → درخواست ثبت می‌کند<br>
+      ↓<br>
+      <b>شما</b> در پنل پلتفرم → بخش «🎫 درخواست‌های فایل نصبی» → ✅ تأیید و ساخت لینک<br>
+      ↓<br>
+      <b>شما</b> لینک یک‌بارمصرف (۷۲ ساعته) را برای مشتری می‌فرستید (تلگرام/پیامک)<br>
+      ↓<br>
+      <b>مشتری</b> لینک را باز می‌کند → زیپ کامل (کد + منو + داده‌ها + مهر لایسنس + راهنمای نصب مستقل) دانلود می‌شود<br>
+      ↓<br>
+      لینک فوراً باطل می‌شود (یک‌بارمصرف) — مشتری روی هاست خودش Extract می‌کند و بدون هیچ تنظیمی منو بالا می‌آید
+    </div>
+    <ul style="margin-top:10px">
+      <li>هر دانلود در <code>data/audit.json</code> لاگ می‌شود (رویداد بدون IP مستقیم، با هش IP).</li>
+      <li>اگر کافه را «معلق» کنید، لینک دانلودش هم بلافاصله مسدود می‌شود — کنترل کامل دست شماست.</li>
+      <li>داخل زیپ هیچ فایل محرمانهٔ پلتفرم (رمز مدیر، پیکربندی MySQL، بانک SQLite) قرار نمی‌گیرد.</li>
+    </ul>
+    <div class="ok">✅ بستهٔ مستقل شامل <code>login.php</code> اختصاصی است؛ رمز پنل کافه‌دار همان رمز قبلی‌اش روی پلتفرم شماست.</div>
+  </div>
+
+  <div class="card">
+    <h2>۵) بانک اطلاعاتی — چطور کار می‌کند؟</h2>
+    <ul>
+      <li>پیش‌فرض <b>SQLite</b>: خودکار ساخته می‌شود در <code>data/db.sqlite</code> (هر کافه بانک خودش را در پوشهٔ خودش دارد). هیچ تنظیمی لازم نیست.</li>
+      <li>برای MySQL کافی است فایل <code>data/db-config.json</code> پر شده باشد — کد خودکار تشخیص می‌دهد و همان را استفاده می‌کند.</li>
+      <li>داده‌های قدیمی <code>db.json</code> هم اگر موجود باشد، در اولین اجرا <b>خودکار</b> به بانک منتقل و فایل اصلی به‌عنوان پشتیبان تغییرنام می‌یابد (<code>db.json.imported-...</code>).</li>
+      <li>نوشتن‌ها همگی <b>اتمیک</b> هستند (تراکنش + قفل) — دیگر فایل نصفه/خراب رخ نمی‌دهد.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>۶) نکات امنیتی این نسخه</h2>
+    <ul>
+      <li>پوشه‌های <code>data</code> و <code>updates</code> با htaccess کاملاً بسته شده‌اند.</li>
+      <li>اجرای PHP در پوشهٔ آپلودها ممنوع شده است.</li>
+      <li>Ⓢ کلید قبلی پیامک (کاوه‌نگار) در فایل‌های قبلی افشا شده بود — از پنل کاوه‌نگار حذفش کنید و کلید تازه را در <code>config.php</code> بگذارید.</li>
+      <li>بعد از تست کامل، فایل <code>setup.php</code> و <code>phpinfo.php</code> (اگر گذاشته‌اید) را از هاست حذف یا rename کنید.</li>
+      <li>SSL که فعال شد، در cPanel «Force HTTPS» را روشن کنید.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>۷) چک‌لیست تست سریع (پیشنهادی)</h2>
+    <ol>
+      <li><code>setup.php</code> → نصب کامل با SQLite ✓</li>
+      <li><code>register.php</code> → یک کافهٔ آزمایشی بسازید ✓</li>
+      <li>وارد پنل کافه شوید → منو/آیتم بسازید ✓</li>
+      <li>کارت «📦 فایل نصبی» → درخواست بزنید ✓</li>
+      <li>پنل پلتفرم → تیکت را تأیید کنید → لینک را باز کنید → زیپ دانلود می‌شود ✓</li>
+      <li>همان لینک را دوباره باز کنید → پیام «یک‌بارمصرف» ✓</li>
+      <li>زیپ را در یک زیرپوشهٔ دیگر Extract کنید → منو بدون تنظیم بالا می‌آید ✓</li>
+    </ol>
+  </div>
+
+  <p class="muted" style="text-align:center">GitiArts · HPR · پشتیبانی: <span dir="ltr">+98 919 834 5661</span> (تلگرام)</p>
+</div>
+</body>
+</html>

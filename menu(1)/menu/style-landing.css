@@ -1,0 +1,85 @@
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#EFE7D6;--panel:#FBF6EB;--panel2:#F2EADA;
+  --ink:#271D12;--ink2:#7D6C54;--ink3:#AC9C81;
+  --line:#DFD2B6;--line2:#CBBB99;
+  --acc:#B4531F;--ok:#4F7A3D;--bad:#A93B2A;
+  --sh:0 18px 44px -18px rgba(56,38,18,.28);
+}
+html{scroll-behavior:smooth}
+body{font-family:Vazirmatn,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);line-height:1.9;font-size:15px}
+
+/* ── هدر ── */
+.hd{position:sticky;top:0;z-index:50;background:rgba(239,231,214,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hd-in{max-width:1020px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 20px}
+.brand{font-weight:900;font-size:18px;color:var(--acc)}
+.hd-btn{text-decoration:none;color:var(--ink);font-size:13px;font-weight:800;border:1px solid var(--line2);border-radius:99px;padding:7px 16px;transition:.15s}
+.hd-btn:hover{background:var(--panel2)}
+
+/* ── هیرو ── */
+.hero{max-width:1020px;margin:0 auto;display:grid;grid-template-columns:1.2fr .8fr;align-items:center;gap:30px;padding:60px 20px 40px}
+.kick{color:var(--acc);font-weight:800;font-size:13px}
+h1{font-size:clamp(28px,4.5vw,44px);font-weight:900;line-height:1.6;margin:10px 0 14px}
+h1 b{color:var(--acc)}
+.lead{color:var(--ink2);font-size:15px;max-width:50ch}
+.cta{display:inline-block;margin-top:22px;background:var(--ink);color:#FBF6EB;text-decoration:none;font-weight:800;padding:13px 30px;border-radius:14px;box-shadow:var(--sh);transition:.15s}
+.cta:hover{transform:translateY(-2px)}
+/* ماکاپ موبایل — فقط با CSS */
+.hero-art{display:flex;justify-content:center}
+.mock{width:210px;background:#fff;border:1px solid var(--line2);border-radius:28px;padding:16px 14px;box-shadow:var(--sh);transform:rotate(-3deg)}
+.mock-head{height:56px;border-radius:14px;background:linear-gradient(135deg,#B4531F,#D96C3A);margin-bottom:12px}
+.mock-line{height:9px;border-radius:99px;background:var(--panel2);margin:9px 0}
+.w80{width:80%}.w60{width:60%}.w70{width:70%}
+.mock-row{display:flex;gap:7px;margin:10px 0}
+.mock-row i{flex:1;height:34px;border-radius:9px;background:var(--panel2)}
+.mock-row i:first-child{background:#EFD9C4}
+.mock-btn{height:38px;border-radius:12px;background:var(--acc);margin-top:14px}
+
+/* ── ویژگی‌ها ── */
+.feats{max-width:1020px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;padding:20px 20px 40px}
+.feat{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.fi{font-size:26px;margin-bottom:6px}
+.feat h3{font-size:14.5px;font-weight:800;margin-bottom:4px}
+.feat p{font-size:12.5px;color:var(--ink2);line-height:2}
+
+/* ── ثبت‌نام ── */
+.reg{max-width:520px;margin:0 auto;padding:20px 20px 50px}
+.reg-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:28px 24px;box-shadow:var(--sh)}
+.reg-card h2{font-size:20px;margin-bottom:4px}
+.reg-sub{color:var(--ink2);font-size:13px;margin-bottom:18px}
+label{display:block;font-size:12.5px;font-weight:700;color:var(--ink2);margin-bottom:14px}
+input[type=text],input[type=tel],input[type=password]{width:100%;border:1px solid var(--line2);background:#FFFDF8;border-radius:11px;padding:10px 13px;font:inherit;margin-top:4px;outline:0;transition:.15s}
+input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(180,83,31,.15)}
+.slug{display:inline-block;font-size:11px;font-weight:800;direction:ltr;unicode-bidi:plaintext;color:var(--ink3)}
+.slug.ok{color:var(--ok)}
+.slug.bad{color:var(--bad)}
+.hint{font-size:11px;color:var(--ink3);margin:-8px 0 12px}
+/* چک‌لیست زندهٔ رمز عبور */
+.pw-checks{display:flex;flex-wrap:wrap;gap:6px 16px;margin:-8px 0 10px;padding:9px 13px;background:#FFFDF8;border:1px dashed var(--line2);border-radius:11px}
+.pw-checks span{font-size:11.5px;font-weight:700;color:var(--ink3);transition:.15s}
+.pw-checks span.ok{color:var(--ok)}
+.pw-checks span.no{color:var(--bad)}
+.pw-warn{font-size:11.5px;font-weight:700;color:var(--bad);background:rgba(169,59,42,.07);border:1px solid rgba(169,59,42,.25);border-radius:10px;padding:8px 12px;margin:-4px 0 12px;line-height:1.9}
+.chk{display:flex;gap:9px;align-items:flex-start;font-size:11.5px;font-weight:600;color:var(--ink2);line-height:1.9}
+.chk input{width:17px;height:17px;margin-top:5px;accent-color:var(--acc);flex:none}
+.msg{min-height:20px;font-size:13px;font-weight:700;margin:4px 0}
+.msg.ok{color:var(--ok)}
+.msg.bad{color:var(--bad)}
+.msg.warn{color:#8A5A17}
+input.bad-in{border-color:var(--bad)!important;background:#FDF6F3}
+button{width:100%;border:1px solid var(--ink);background:var(--ink);color:#FBF6EB;font:inherit;font-weight:800;font-size:15px;padding:13px;border-radius:13px;cursor:pointer;transition:.15s}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:not(:disabled):hover{transform:translateY(-1px)}
+.foot{font-size:12px;color:var(--ink2);text-align:center;margin-top:18px;border-top:1px dashed var(--line);padding-top:14px}
+.foot a{color:var(--acc);font-weight:800;text-decoration:none}
+
+/* ── فوتر ── */
+.ft{text-align:center;padding:26px 20px 40px;border-top:1px solid var(--line);font-size:12.5px}
+.ft b{color:var(--acc)}
+.muted{color:var(--ink3);font-size:11px;margin-top:4px}
+
+@media(max-width:760px){
+ .hero{grid-template-columns:1fr;padding:36px 20px 20px;text-align:center}
+ .lead{margin:0 auto}
+ .hero-art{order:2}
+}

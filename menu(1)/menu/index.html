@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GitiArts — سامانهٔ منوی دیجیتال کافه و رستوران</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<link rel="stylesheet" href="style-landing.css">
+</head>
+<body>
+
+<div class="hd-in">
+    <div class="brand">🌿 GitiArts</div>
+    <div style="display:flex;gap:8px">
+      <a class="hd-btn" href="login.php" style="border-style:dashed">ورود </a>
+      <a class="hd-btn" href="#register" style="background:var(--ink);color:#FBF6EB">ثبت‌نام</a>
+    </div>
+  </div>
+  
+<section class="hero">
+  <div class="hero-in">
+    <p class="kick">سامانهٔ منوی دیجیتال — قدرت‌گرفته از GitiArts</p>
+    <h1>منوی کافه‌ات را <b>۵ دقیقه‌ای</b> بساز،<br>سفارش‌ها را زنده بگیر.</h1>
+    <p class="lead">منوی آنلاین با QR میزها، سفارش آنلاین، باشگاه مشتریان، آشپزخانه و صندوق — همه روی موبایل. آدرس اختصاصی خودت را همین امروز بساز.</p>
+    <a class="cta" href="#register">🚀 منوی من را بساز</a>
+  </div>
+  <div class="hero-art" aria-hidden="true">
+    <div class="mock">
+      <div class="mock-head"></div>
+      <div class="mock-line w80"></div>
+      <div class="mock-line w60"></div>
+      <div class="mock-row"><i></i><i></i></div>
+      <div class="mock-line w70"></div>
+      <div class="mock-row"><i></i><i></i><i></i></div>
+      <div class="mock-btn"></div>
+    </div>
+  </div>
+</section>
+
+<section class="feats">
+  <div class="feat"><div class="fi">📱</div><h3>منو و QR میز</h3><p>مشتری QR میز را اسکن می‌کند، منو را می‌بیند و سفارش می‌دهد — بدون اپ.</p></div>
+  <div class="feat"><div class="fi">🍳</div><h3>آشپزخانهٔ زنده</h3><p>سفارش‌ها با تایمر به آشپزخانه می‌رسند؛ «آماده شد» را با یک کلیک بزن.</p></div>
+  <div class="feat"><div class="fi">💳</div><h3>صندوق و باشگاه</h3><p>رسید حرارتی، فاکتور پیامکی، امتیاز باشگاه مشتریان — همه در یک پنل.</p></div>
+  <div class="feat"><div class="fi">🎨</div><h3>طراحی زنده</h3><p>رنگ، لوگو، بنر و چیدمان را همان‌جا ببین و تغییر بده — بدون کدنویسی.</p></div>
+</section>
+
+<section class="reg" id="register">
+  <div class="reg-card">
+    <h2>منوی کافه‌ات را همین حالا بساز</h2>
+    <p class="reg-sub">۱۴ روز کامل رایگان تست کن — بدون نیاز به کارت بانکی.</p>
+    <form id="regForm" novalidate>
+      <label>نام کافه / رستوران
+        <input type="text" id="f-name" maxlength="60" placeholder="مثلاً: کافه مانا" required></label>
+      <label>آدرس اختصاصی منو <span id="slug-prev" class="slug" dir="ltr">gitiarts.ir/menu/…</span>
+        <input type="text" id="f-slug" maxlength="30" dir="ltr" placeholder="cafemana" autocomplete="off" required></label>
+      <p class="hint">فقط حروف انگلیسی کوچک، عدد و خط‌تیره — این می‌شود آدرس منوی تو</p>
+      <label>موبایل (برای بازیابی رمز)
+        <input type="tel" id="f-phone" inputmode="numeric" maxlength="11" dir="ltr" placeholder="09121234567" required></label>
+      <label>رمز عبور پنل مدیریت
+        <input type="password" id="f-pass" required autocomplete="new-password"></label>
+      <div class="pw-checks" id="pw-checks">
+        <span data-k="len">• حداقل ۸ کاراکتر</span>
+        <span data-k="alpha">• حداقل یک حرف</span>
+        <span data-k="num">• حداقل یک عدد</span>
+        <span data-k="sym">• حداقل یک علامت مثل @ # !</span>
+      </div>
+      <p class="pw-warn" id="pw-common" style="display:none">⚠️ این رمز جزو رایج‌ترین رمزهای هک‌شدهٔ جهان است — قابل قبول نیست؛ یک ترکیب شخصی‌سازی‌شده بسازید (مثلاً دو کلمهٔ بی‌ربط + عدد).</p>
+      <p class="hint" style="margin-top:-2px">رمز خوب: طولانی، غیرقابل حدس، بدون تاریخ تولد و شمارهٔ موبایل — و فقط برای همین پنل.</p>
+      <label>تکرار رمز
+        <input type="password" id="f-pass2" required autocomplete="new-password"></label>
+      <p class="pw-warn" id="pw-eq" style="display:none">تکرار رمز با رمز یکسان نیست.</p>
+      <label class="chk">
+        <input type="checkbox" id="f-priv" required>
+        <span>دادهٔ مشتریانم (شماره موبایل باشگاه) نزد GitiArts نگه‌داری می‌شود و مسئول حفاظت از آن هستم.</span>
+      </label>
+      <p class="msg" id="reg-msg"></p>
+      <button id="reg-btn" type="submit" disabled title="تا سبز شدن همهٔ تیک‌های رمز و کامل شدن فرم فعال نمی‌شود">ساخت منوی من 🚀</button>
+    </form>
+    <p class="foot">سوالی داری؟ تلگرام: <a dir="ltr" href="https://t.me/+989198345661">+98 919 834 5661</a></p>
+  </div>
+</section>
+
+<footer class="ft">
+  <div>طراحی و اجرا توسط <b>HPR-GitiArts</b></div>
+  <div class="muted">© <span id="yr"></span> GitiArts — تمامی حقوق محفوظ است</div>
+</footer>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+ $('#yr').textContent=new Intl.DateTimeFormat('fa-IR',{year:'numeric'}).format(new Date());
+
+/* ── اعتبارسنجی زندهٔ slug ── */
+const RESERVED=['admin','panel','api','www','mail','ftp','data','updates','demo','register','login','assets','static','cdn','support','test'];
+const slugOk=s=>/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(s) && !RESERVED.includes(s);
+const slugInput=$('#f-slug'), slugPrev=$('#slug-prev');
+slugInput.addEventListener('input',()=>{
+  let v=slugInput.value.toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,30);
+  slugInput.value=v;
+  if(!v){slugPrev.textContent='gitiarts.ir/menu/…';slugPrev.classList.remove('ok','bad');check();return;}
+  slugPrev.textContent='gitiarts.ir/menu/'+v+'/';
+  slugPrev.classList.toggle('ok',slugOk(v));
+  slugPrev.classList.toggle('bad',!slugOk(v));
+  check();
+});
+
+/* ── چک‌لیست زندهٔ رمز عبور + هشدار رمزهای رایج ── */
+const COMMON_PW=['12345678','123456789','1234567890','1234567891','11223344','11111111','00000000','12121212','12341234','1234567a','123456aa','aa123456','a12345678','qwerty123','1q2w3e4r','q1w2e3r4','password','password1','passw0rd','abcd1234','abcdefgh','iloveyou','admin1234','admin12345','88888888','66666666','99999999','147258369','987654321','9876543210','iran1234','iran12345','0912123456','0912345678','coffee123','cafe12345','gitiarts1'];
+function pwState(){
+  const v=$('#f-pass').value;
+  const st={len:v.length>=8, alpha:/[A-Za-z\u0600-\u06FF]/.test(v), num:/\d/.test(v),
+            sym:/[^A-Za-z0-9\u0600-\u06FF\s]/.test(v), common:COMMON_PW.includes(v.toLowerCase())};
+  $$('#pw-checks span').forEach(el=>{
+    const ok=st[el.dataset.k];
+    el.classList.toggle('ok',!!ok);
+    el.classList.toggle('no',!ok&&v.length>0);
+    el.textContent=(ok?'✓':(v?'✗':'•'))+el.textContent.slice(1);
+  });
+  $('#pw-common').style.display=st.common?'':'none';
+  const v2=$('#f-pass2').value;
+  const eqOk=!v2||v2===v;
+  $('#pw-eq').style.display=eqOk?'none':'';
+  return st;
+}
+
+/* ── فعال‌شدن دکمه + کامنت زندهٔ خطاهای فرم ── */
+const touched=new Set();
+['f-name','f-slug','f-phone','f-pass','f-pass2'].forEach(id=>
+  $('#'+id).addEventListener('blur',()=>{touched.add(id);check();}));
+
+function check(){
+  const st=pwState();
+  const v1=$('#f-pass').value;
+  const okName = $('#f-name').value.trim().length>=2;
+  const okSlug = slugOk(slugInput.value);
+  const okPh   = /^09\d{9}$/.test($('#f-phone').value.trim());
+  const okFac  = st.len && st.alpha && st.num && st.sym;
+  const okPass = okFac && !st.common;
+  const okEq   = v1.length>0 && v1===$('#f-pass2').value;
+  const okPriv = $('#f-priv').checked;
+  const allOk  = okName&&okSlug&&okPh&&okPass&&okEq&&okPriv;
+  $('#reg-btn').disabled = !allOk;
+
+  /* کادر قرمز برای فیلدهای دست‌خورده و ناقص */
+  const mark=(id,ok)=>$('#'+id).classList.toggle('bad-in',touched.has(id)&&!ok);
+  mark('f-name',okName); mark('f-slug',okSlug); mark('f-phone',okPh);
+  mark('f-pass',okPass); mark('f-pass2',okEq);
+
+  /* کامنت زنده: هر چیزی که کامل نیست همین‌جا به کاربر گفته می‌شود */
+  const msg=$('#reg-msg');
+  if(allOk){ msg.className='msg ok'; msg.textContent='✅ همه‌چیز آماده است — دکمهٔ پایین فعال شد.'; return; }
+  const miss=[];
+  if(!okName) miss.push('نام کافه را بنویس (حداقل ۲ حرف).');
+  if(!okSlug) miss.push('آدرس اختصاصی معتبر انتخاب کن: فقط حروف کوچک انگلیسی، عدد و خط‌تیره.');
+  if(!okPh)   miss.push('موبایل باید ۱۱ رقم باشد و با ۰۹ شروع شود.');
+  if(!okFac)  miss.push('رمز عبور فاکتورهای بالا را ندارد — تا همهٔ تیک‌ها سبز نشود حساب ساخته نمی‌شود.');
+  if(st.common) miss.push('این رمز جزو رایج‌ترین رمزهای هک‌شدهٔ جهان است — ترکیب شخصی‌تری بساز.');
+  if(!okEq)   miss.push('تکرار رمز را دقیقاً مثل خود رمز بنویس.');
+  if(!okPriv) miss.push('تیک تعهد نگه‌داری دادهٔ مشتریان را بزن.');
+  msg.className='msg warn'; msg.textContent=miss.join(' ');
+}
+['f-name','f-phone','f-pass','f-pass2'].forEach(id=>$('#'+id).addEventListener('input',check));
+ $('#f-priv').addEventListener('change',check);
+check();
+
+/* ── ارسال ── */
+ $('#regForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const btn=$('#reg-btn'), msg=$('#reg-msg');
+  /* بازبینی نهایی — اگر فرم ناقص باشد، کامنت خطاها همان‌جا نمایش داده شده و ارسال نمی‌شود */
+  check();
+  if($('#reg-btn').disabled) return;
+  btn.disabled=true; btn.textContent='در حال ساخت منوی تو…';
+  msg.className='msg'; msg.textContent='';
+  try{
+    const r=await fetch('register.php',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        name:$('#f-name').value.trim(),
+        slug:slugInput.value,
+        phone:$('#f-phone').value.trim(),
+        pass:$('#f-pass').value
+      })});
+    const t=await r.text();
+    let j; try{ j=JSON.parse(t); }catch(_){ throw new Error('پاسخ سرور نامعتبر بود — چند لحظه بعد دوباره امتحان کن'); }
+    if(!j.ok) throw new Error(j.err||'خطای نامشخص');
+    msg.className='msg ok'; msg.textContent='✅ منوی تو ساخته شد! داریم می‌بریم به پنل…';
+    setTimeout(()=>{location.href=j.data.url;},1200);
+  }catch(err){
+    msg.className='msg bad'; msg.textContent='⚠️ '+err.message;
+    btn.disabled=false; btn.textContent='ساخت منوی من 🚀';
+  }
+});
+</script>
+</body>
+</html>
