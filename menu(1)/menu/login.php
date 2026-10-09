@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
-/* BUILD: login-v4 — v5.0.2: فرم استاندارد «نام کاربری (شمارهٔ موبایل) + رمز ورود»
+require_once __DIR__ . '/rate-limit.php';
+/* BUILD: login-v5 — v5.0.6: Rate Limiting روی لاگین
+   - حداکثر ۱۰ تلاش در ۱۵ دقیقه برای هر IP
+   - حداکثر ۵ تلاش در ۱۵ دقیقه برای هر شماره موبایل
+   - در صورت موفقیت، شمارنده صفر می‌شود
    همهٔ نقش‌ها (مدیر/صندوق/آشپزخانه) به یک شکل وارد می‌شوند:
    • پرسنل: موبایل ثبت‌شده در پنل + رمز (کاربران قدیمیِ فقط-پین: پین در هر دو فیلد یا رمز خالی)
    • مدیر: موبایل ثبت‌شده هنگام ثبت‌نام + رمز پنل
@@ -14,7 +18,11 @@ function login_store(string $slug): GStore {
 }
 
 /* ساخت نشست و خروجی ریدایرکت به hub کافه */
-function login_finish(string $slug, string $user, string $role): void {
+function login_finish(string $slug, string $user, string $role, string $rlMobile = ''): void {
+  /* v5.0.6: صفر کردن شمارنده‌ها در صورت ورود موفق */
+  rate_limit_reset('login:ip:' . rate_limit_client_ip());
+  if ($rlMobile !== '') rate_limit_reset('login:mobile:' . $rlMobile);
+
   if (session_status() !== PHP_SESSION_ACTIVE) {
     $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
     session_name('TEN_SESS');
@@ -55,6 +63,23 @@ if ($act === 'login') {
   $pick     = !empty($in['pick']) && $slugHint !== '';
 
   if ($raw === '') p_json_out(false, 'شمارهٔ موبایل (نام کاربری) را وارد کنید');
+
+  /* ═══ v5.0.6: Rate Limiting قبل از هر بررسی ═══ */
+  $clientIp  = rate_limit_client_ip();
+  $mobileKey = login_digits($raw);
+
+  if (!rate_limit_check("login:ip:$clientIp", 10, 900)) {
+    $wait = rate_limit_remaining("login:ip:$clientIp");
+    $mins = max(1, (int)ceil($wait / 60));
+    p_json_out(false, "تلاش‌های بیش از حد از این دستگاه. لطفاً بعد از {$mins} دقیقه دوباره امتحان کنید.");
+  }
+
+  if ($mobileKey !== '' && !rate_limit_check("login:mobile:$mobileKey", 5, 900)) {
+    $wait = rate_limit_remaining("login:mobile:$mobileKey");
+    $mins = max(1, (int)ceil($wait / 60));
+    p_json_out(false, "تلاش‌های بیش از حد برای این شماره. لطفاً بعد از {$mins} دقیقه دوباره امتحان کنید.");
+  }
+  /* ═══ پایان Rate Limiting ═══ */
 
   $tenantsList = p_tenants_load()['tenants'];
 
@@ -116,7 +141,7 @@ if ($act === 'login') {
 
     /* v5.0.5: یک حساب = ورود مستقیم مثل قبل؛ چند حساب = فهرست انتخاب کافه (بدون ساخت نشست) */
     if (count($found) === 1)
-      login_finish($found[0]['slug'], $found[0]['user'], $found[0]['role']);
+      login_finish($found[0]['slug'], $found[0]['user'], $found[0]['role'], $mobileKey);
     if (count($found) > 1)
       p_json_out(true, null, ['choose' => $found]);
 
@@ -142,7 +167,7 @@ if ($act === 'login') {
   if (empty($db['auth']['ph']) || !password_verify($pass, $db['auth']['ph'])) {
     p_json_out(false, 'رمز عبور مدیریت نادرست است');
   }
-  login_finish($slug, (string)($db['auth']['user'] ?? 'مدیر'), 'admin');
+  login_finish($slug, (string)($db['auth']['user'] ?? 'مدیر'), 'admin', $mobileKey);
 }
 ?>
 <!DOCTYPE html>

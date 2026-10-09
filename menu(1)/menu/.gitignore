@@ -1,0 +1,9 @@
+﻿# Rate limiting data
+data/rate-limits/
+
+# Backups
+data/backups/
+
+# Temporary
+*.tmp
+*.log
