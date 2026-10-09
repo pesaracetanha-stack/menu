@@ -125,7 +125,7 @@ details[open] summary{margin-bottom:8px}
     <div class="sec-t">📊 امروز</div>
     <div class="grid3">
       <div class="st"><b><?= $faNum($todayCount) ?></b><span>سفارش</span></div>
-      <div class="st"><b><?= toman($todaySum) ?></b><span>تومان فروش</span></div>
+      <div class="st"><b><?= number_format($todaySum) ?></b><span>تومان فروش</span></div>
       <div class="st"><b><?= count($db['customers']) ?></b><span>عضو باشگاه</span></div>
     </div>
   </div>
