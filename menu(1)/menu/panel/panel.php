@@ -22,6 +22,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       if ($m === '') { $ok = 'رمز عوض شد'; plat_log('pass_change'); } else $msg = $m; break;
       case 'activate': plat_activate($_POST['slug'] ?? '', max(30, (int)($_POST['days'] ?? 365)));
                        $ok = 'لایسنس فعال شد'; plat_log('activate', ['slug' => $_POST['slug'] ?? '', 'days' => (int)($_POST['days'] ?? 365)]); break;
+      /* PLAN_UI_V1 */
+      case 'setplan': plat_set_plan($_POST['slug'] ?? '', $_POST['plan'] ?? 'free');
+                    $ok = 'پلن تغییر کرد'; plat_log('setplan', ['slug' => $_POST['slug'] ?? '', 'plan' => $_POST['plan'] ?? '']); break;
       case 'suspend':  plat_suspend($_POST['slug'] ?? ''); $ok = 'کافه غیرفعال شد'; plat_log('suspend', ['slug' => $_POST['slug'] ?? '']); break;
       case 'resetpass': $tmpPass = plat_reset_pass($_POST['slug'] ?? '');
                         $ok = 'رمز موقت مدیر کافه ساخته شد'; plat_log('resetpass', ['slug' => $_POST['slug'] ?? '']); break;
@@ -255,6 +258,17 @@ function plat_ev_fa(string $ev): string {
             <?php if ($st==='approved'): ?><span>انقضای لینک: <?= jdate((int)($r['expires'] ?? 0), 'Y/m/d H:i') ?></span><?php endif; ?>
           </div>
           <?php if ($st==='pending'): ?>
+          <div class="ten-ops" style="margin-top:6px">
+            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+              <input type="hidden" name="act" value="setplan"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
+              <label class="mini">تغییر پلن:</label>
+              <select name="plan" style="padding:5px 8px;font-family:inherit;font-size:13px;border-radius:6px;border:1px solid #DFD2B6;background:#fff">
+                <?php foreach ($cfg['plans'] as $pk => $pv): ?>
+                  <option value="<?= $pk ?>" <?= $pk === $__pk ? 'selected' : '' ?>><?= htmlspecialchars($pv['name_fa']) ?> — <?= toman($pv['price_toman']) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn2">🎯 اعمال</button></form>
+          </div>
           <div class="ten-ops">
             <form method="post" class="inline" onsubmit="return confirm('لینک یک‌بارمصرف ۷۲ ساعته ساخته شود؟')">
               <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
@@ -295,6 +309,13 @@ function plat_ev_fa(string $ev): string {
             <b><?= htmlspecialchars($x['name']) ?></b>
             <span class="pill <?= $x['active'] ? 'ok' : 'bad' ?>"><?= $x['active'] ? 'فعال' : 'غیرفعال' ?></span>
             <?php if ($det['pending_export']): ?><span class="pill warn">تیکت در انتظار</span><?php endif; ?>
+          </div>
+          <div class="ten-plan" style="margin:6px 0 4px;font-size:13px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+            <?php $__pk = plat_get_plan($x['slug']); $__pc = $cfg['plans'][$__pk] ?? $cfg['plans']['free']; ?>
+            <span>پلن فعلی: <span class="pill" style="background:<?= $__pc['color'] ?>;color:#fff;font-weight:700"><?= htmlspecialchars($__pc['name_fa']) ?></span></span>
+            <span class="mini" style="color:#7D6C54">قیمت ماهانه: <b><?= toman($__pc['price_toman']) ?></b></span>
+            <?php if (!empty($__pc['max_users'])): ?><span class="mini" style="color:#7D6C54">حداکثر پرسنل: <b><?= pnum($__pc['max_users']) ?></b></span><?php endif; ?>
+            <?php if ($__pc['sms_enabled']): ?><span class="mini" style="color:#4F7A3D">📱 پنل پیامکی فعال</span><?php endif; ?>
           </div>
           <div class="ten-meta" dir="auto">
             <span>آدرس: <a href="<?= htmlspecialchars($x['url']) ?>" target="_blank" dir="ltr">/<?= htmlspecialchars($x['slug']) ?>/</a></span>
@@ -362,6 +383,17 @@ function plat_ev_fa(string $ev): string {
               <label class="mini">✏️ نام:</label>
               <input type="text" name="name" value="<?= htmlspecialchars($x['name']) ?>" maxlength="60" style="width:150px;padding:5px;border:1px solid #CBBB99;border-radius:8px;font:inherit">
               <button class="btn2">ثبت نام</button></form>
+          </div>
+          <div class="ten-ops" style="margin-top:6px"> <!-- PLAN_FORM_FINAL -->
+            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+              <input type="hidden" name="act" value="setplan"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
+              <label class="mini">تغییر پلن:</label>
+              <select name="plan" style="padding:5px 8px;font-family:inherit;font-size:13px;border-radius:6px;border:1px solid #DFD2B6;background:#fff">
+                <?php foreach ($cfg['plans'] as $pk => $pv): ?>
+                  <option value="<?= $pk ?>" <?= $pk === $__pk ? 'selected' : '' ?>><?= htmlspecialchars($pv['name_fa']) ?> — <?= toman($pv['price_toman']) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn2">🎯 اعمال</button></form>
           </div>
           <?php /* جزئیات کامل + پرسنل */ ?>
           <details style="margin-top:8px">

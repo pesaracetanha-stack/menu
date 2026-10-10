@@ -75,6 +75,36 @@ function plat_activate(string $slug, int $days): void {
   }
 }
 
+/* ═══ PLAN_V1: تنظیم پلن کافه ═══ */
+function plat_set_plan(string $slug, string $plan): void {
+  $cfg = p_config();
+  $plans = $cfg['plans'] ?? [];
+  if (!isset($plans[$plan])) {
+    throw new Exception('پلن نامعتبر: ' . $plan);
+  }
+  try {
+    plat_store($slug)->txn(function (array &$db) use ($plan, $plans) {
+      if (empty($db)) throw new Exception('دیتای کافه یافت نشد');
+      $db['license']['plan']       = $plan;
+      $db['license']['plan_since'] = round(microtime(true) * 1000);
+      $db['license']['price_toman'] = $plans[$plan]['price_toman'] ?? 0;
+      return $db;
+    });
+  } catch (Throwable $e) {
+    throw new Exception('دیتای کافه یافت نشد');
+  }
+}
+
+/* گرفتن پلن فعلی کافه (پیش‌فرض: free) */
+function plat_get_plan(string $slug): string {
+  try {
+    $db = plat_store($slug)->get();
+    return (string)($db['license']['plan'] ?? 'free');
+  } catch (Throwable $e) {
+    return 'free';
+  }
+}
+
 /* غیرفعال‌کردن (مثلاً نکول) */
 function plat_suspend(string $slug): void {
   try {
