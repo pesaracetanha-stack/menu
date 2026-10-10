@@ -188,6 +188,10 @@ try {
   p_json_dbg(false, $msg);
 }
 
+/* ═══ WELCOME_SMS_V1 ═══ */
+@sms_send_welcome($phone, $name);
+/* ═══ پایان WELCOME_SMS_V1 ═══ */
+
 /* ست کردن خودکار نشست مدیر تا مستقیماً وارد ویزارد شود */
 if (session_status() !== PHP_SESSION_ACTIVE) {
   $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
