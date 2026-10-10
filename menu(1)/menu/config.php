@@ -31,7 +31,51 @@ return [
   ],
 
   /* ── سقف هر کافه ───────────────────────────────── */
-  'limits' => [
+  /* ═══ PLANS_V1: تعریف پلن‌های اشتراک ═══
+     هر پلن می‌تواند محدودیت‌های متفاوت داشته باشد.
+     - price_toman: قیمت ماهانه به تومان (۰ = رایگان)
+     - max_users: حداکثر پرسنل (۰ = نامحدود)
+     - sms_enabled: آیا پنل پیامکی فعال است؟
+     - max_menu_items: حداکثر آیتم منو (۰ = نامحدود)
+     - max_orders_month: حداکثر سفارش ماهانه (۰ = نامحدود)
+     - custom_domain: دامنه اختصاصی؟
+     - support_level: none | email | priority
+  */
+  'plans' => [
+    'free' => [
+      'name_fa'        => 'رایگان',
+      'price_toman'    => 0,
+      'max_users'      => 0,
+      'sms_enabled'    => false,
+      'max_menu_items' => 30,
+      'max_orders_month' => 0,
+      'custom_domain'  => false,
+      'support_level'  => 'none',
+      'color'          => '#7D6C54',
+    ],
+    'basic' => [
+      'name_fa'        => 'پایه',
+      'price_toman'    => 200000,
+      'max_users'      => 2,
+      'sms_enabled'    => false,
+      'max_menu_items' => 0,
+      'max_orders_month' => 0,
+      'custom_domain'  => false,
+      'support_level'  => 'email',
+      'color'          => '#4F7A3D',
+    ],
+    'pro' => [
+      'name_fa'        => 'حرفه‌ای',
+      'price_toman'    => 400000,
+      'max_users'      => 0,
+      'sms_enabled'    => true,
+      'max_menu_items' => 0,
+      'max_orders_month' => 0,
+      'custom_domain'  => true,
+      'support_level'  => 'priority',
+      'color'          => '#B4531F',
+    ],
+  ],  'limits' => [
     'upload_mb'  => 200,     // حجم آپلود هر کافه (MB) — v5.0.3-test.3: حالا واقعاً اعمال می‌شود؛ ۵۰ برای ویدیوی ۶۰MB کم بود
     'items'      => 2000,    // آیتم منو
     'tables'     => 100,     // میز
