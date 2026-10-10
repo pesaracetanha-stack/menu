@@ -853,6 +853,36 @@ const Actions = {
 
   /* ═══ v5.0.5-test.5: پنل پیامکی — اتصال API، همگام‌سازی، پیامک گروهی ═══ */
   'sms-cfg'() { smsCfgModal(); },
+  /* PAY_UI_V1 */
+  'pay-cfg'() { payCfgModal(); },
+  'pay-cfg-save'() {
+    const b = payFormBody();
+    if (!b) return;
+    Api.post('payment_cfg_save', b).then(db => {
+      Store.db.payment = db.cfg;
+      render();
+      ui.toast({ msg: db.msg || 'ذخیره شد' });
+    }).catch(e => ui.toast({ msg: e.message || 'خطا در ذخیره' }));
+  },
+  'pay-test'() {
+    const b = payFormBody();
+    if (!b) return;
+    Api.post('payment_cfg_save', b)
+      .then(db => { Store.db.payment = db.cfg; return Api.post('payment_test'); })
+      .then(r => Api.get('payment_state').then(st => {
+        Store.db.payment = st.cfg;
+        const o = document.getElementById('pay-test-out');
+        if (o) {
+          const t = st.cfg.st && st.cfg.st.lastTest;
+          o.textContent = t ? (t.ok ? '✅ ' + t.msg : '⚠️ ' + t.msg) : '';
+          o.style.color = t && t.ok ? '#4F7A3D' : '#B4531F';
+        }
+        render();   /* FIX_RENDER_V1 */
+        ui.toast({ msg: r.msg || 'تست انجام شد' });
+      }))
+      .catch(e => ui.toast({ msg: e.message || 'خطا در تست اتصال' }));
+  },
+  /* پایان PAY_UI_V1 */
   'sms-cfg-save'(el) {
     const b = smsFormBody();
     el.disabled = true;

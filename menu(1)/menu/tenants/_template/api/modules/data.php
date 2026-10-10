@@ -2,7 +2,7 @@
 declare(strict_types=1);
 /* v5: display_errors حذف شد — خطاها فقط از مسیر exception handler بیرون می‌رود */
 
-const SAVE_KEYS = ['menu','tables','settings','promos','users','reservations','shift','customPalettes','setup','invoices'];
+const SAVE_KEYS = ['menu','tables','settings','promos','users','reservations','shift','customPalettes','setup','invoices','payment'];
 
 function d_save(string $key, $val): array {
   if (!in_array($key, SAVE_KEYS, true)) throw new Exception('کلید ذخیره نامعتبر');
