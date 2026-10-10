@@ -1268,14 +1268,16 @@ const Actions = {
     const a = App.adm.nuu;
     const name = a.name.trim();
     const phone = en(a.phone).replace(/\D/g, '');
-    const pass = a.pass;
+    let pass = a.pass;   /* FIX_CONST_PASS_V1 — برای رمز موقت دعوت پرسنل */
     const pin = en(a.pin).replace(/\D/g, '');
     if (name.length < 2) { ui.toast({ msg: 'نام کاربر را وارد کنید' }); return; }
     if (phone && phone.length !== 11) { ui.toast({ msg: 'موبایل باید ۱۱ رقم باشد (مثلاً 09121234567)' }); return; }
     if (pass && (pass.length < 8 || !/[A-Za-z\u0600-\u06FF]/.test(pass) || !/\d/.test(pass))) { ui.toast({ msg: 'رمز حداقل ۸ کاراکتر با حداقل یک حرف و یک عدد باشد' }); return; }
     if (pin && pin.length !== 4) { ui.toast({ msg: 'پین باید ۴ رقم باشد یا خالی بماند' }); return; }
     if (!phone && !pin) { ui.toast({ msg: 'برای ورود، دست‌کم موبایل + رمز یا پین لازم است' }); return; }
-    if (phone && !pass) { ui.toast({ msg: 'برای ورود با موبایل، رمز هم لازم است' }); return; }
+    /* STAFF_INVITE_V1: اگر موبایل داد ولی رمز نه، رمز موقت می‌سازیم */
+    let __tempPass = '';
+    if (phone && !pass) { __tempPass = genTempPass(); pass = __tempPass; }
     const u = { id: uid(), name, pin };
     if (phone) u.phone = phone;
     if (pass) u.pass = pass;   /* سرور هش می‌کند؛ هرگز متنی ذخیره نمی‌شود */
@@ -1284,7 +1286,21 @@ const Actions = {
     App.adm.nuu = { name: '', phone: '', pass: '', pin: '' };
     Store.commit('users');
     render();
-    ui.toast({ msg: `کاربر «${name}» اضافه شد — ورودش با موبایل و رمز` });
+    /* STAFF_INVITE_V1: SMS دعوت یا نمایش مودال */
+    if (__tempPass && phone) {
+      const __sm = Store.db.sms || {};
+      const __cafe = (Store.db.menu && Store.db.menu.brand && Store.db.menu.brand.name) || 'کافه';
+      const __txt = `ورود به پنل ${__cafe}:\nنام کاربری: ${phone}\nرمز موقت: ${__tempPass}\nپس از ورود، رمز را تغییر دهید.`;
+      if (__sm.en) {
+        Api.post('sms_send_one', { phone, txt: __txt })
+          .then(() => showCredModal(name, phone, __tempPass, 'sms-sent'))
+          .catch(() => showCredModal(name, phone, __tempPass, 'no-sms'));
+      } else {
+        showCredModal(name, phone, __tempPass, 'no-sms');
+      }
+    } else {
+      ui.toast({ msg: `کاربر «${name}» اضافه شد` });
+    }
   },
   'user-del'(el) {
     const arr = Store.db.users;
@@ -1817,3 +1833,36 @@ document.addEventListener('scroll', e => {
     syncDots();
   }, 140);
 }, true);
+
+
+/* ═══ STAFF_INVITE_V1 helpers ═══ */
+function genTempPass() {
+  const U='ABCDEFGHJKLMNPQRSTUVWXYZ', L='abcdefghjkmnpqrstuvwxyz', D='23456789', S='@#!$%';
+  const p = (s)=>s[Math.floor(Math.random()*s.length)];
+  let r = p(U)+p(L)+p(D)+p(S);
+  const all = U+L+D;
+  for (let i=0;i<4;i++) r += p(all);
+  return r;
+}
+function showCredModal(name, phone, pass, reason) {
+  const old = document.getElementById('cred-modal');
+  if (old) old.remove();
+  const esc = (s)=>String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const msg = reason==='sms-sent' ? '✅ اطلاعات ورود به شماره پیامک شد' : '⚠️ پنل پیامکی وصل نیست — رمز را دستی به پرسنل بدهید';
+  const html = '<div id="cred-modal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px">'
+    + '<div style="background:#FBF6EB;border-radius:16px;padding:22px 20px;max-width:400px;width:100%;direction:rtl;font-family:Vazirmatn,sans-serif">'
+    + '<h3 style="margin:0 0 4px;font-size:17px">اطلاعات ورود پرسنل</h3>'
+    + '<p style="margin:0 0 12px;font-size:13px;color:#7D6C54">'+esc(name)+'</p>'
+    + '<div style="background:#fff;border:1px solid #DFD2B6;border-radius:10px;padding:12px;margin-bottom:10px">'
+    + '<div style="margin-bottom:6px"><span style="font-size:13px;color:#7D6C54">نام کاربری:</span> <code dir="ltr" style="background:#F2EADA;padding:2px 8px;border-radius:4px;font-size:15px">'+esc(phone)+'</code></div>'
+    + '<div><span style="font-size:13px;color:#7D6C54">رمز موقت:</span> <code dir="ltr" style="background:#F2EADA;padding:2px 8px;border-radius:4px;font-size:15px;font-weight:700">'+esc(pass)+'</code></div>'
+    + '</div>'
+    + '<p style="font-size:12px;color:#7D6C54;margin:0 0 14px">'+msg+'</p>'
+    + '<button id="cred-close" style="width:100%;padding:12px;background:#B4531F;color:#fff;border:0;border-radius:12px;font-family:inherit;font-size:15px;cursor:pointer">متوجه شدم</button>'
+    + '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('cred-close').addEventListener('click', function(){
+    document.getElementById('cred-modal').remove();
+  });
+}
+/* ═══ پایان STAFF_INVITE_V1 ═══ */
