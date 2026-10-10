@@ -75,7 +75,17 @@
       </label>
       <p class="msg" id="reg-msg"></p>
       <button id="reg-btn" type="submit" disabled title="تا سبز شدن همهٔ تیک‌های رمز و کامل شدن فرم فعال نمی‌شود">ساخت منوی من 🚀</button>
-    </form>
+    </form>
+    <div id="otp-step" style="display:none;margin-top:14px">
+      <!-- OTP_STEP_V1 -->
+      <p class="hint" style="font-weight:700;color:var(--ink);margin-bottom:4px">کد تأیید پیامکی</p>
+      <p class="hint">کد ۵ رقمی به شماره <b id="otp-phone" dir="ltr"></b> ارسال شد.</p>
+      <label>کد تأیید
+        <input type="text" id="f-otp" maxlength="5" inputmode="numeric" dir="ltr" placeholder="12345" autocomplete="one-time-code"></label>
+      <p class="msg" id="otp-msg"></p>
+      <button id="otp-btn" type="button">تأیید و ساخت منو</button>
+      <p class="hint" style="text-align:center;margin-top:8px"><a href="#" id="otp-back" style="color:var(--acc)">‹ تغییر شماره یا اطلاعات</a></p>
+    </div>
     <p class="foot">سوالی داری؟ تلگرام: <a dir="ltr" href="https://t.me/+989198345661">+98 919 834 5661</a></p>
   </div>
 </section>
@@ -185,12 +195,58 @@ check();
     let j; try{ j=JSON.parse(t); }catch(_){ throw new Error('پاسخ سرور نامعتبر بود — چند لحظه بعد دوباره امتحان کن'); }
     if(!j.ok) throw new Error(j.err||'خطای نامشخص');
     msg.className='msg ok'; msg.textContent='✅ منوی تو ساخته شد! داریم می‌بریم به پنل…';
+    if(j.data&&j.data.need_otp){showOtpStep(j.data);btn.disabled=false;btn.textContent='ساخت منوی من';return;}
     setTimeout(()=>{location.href=j.data.url;},1200);
   }catch(err){
     msg.className='msg bad'; msg.textContent='⚠️ '+err.message;
     btn.disabled=false; btn.textContent='ساخت منوی من 🚀';
   }
 });
+
+/* OTP_STEP_V1 */
+let otpFormState = null;
+function showOtpStep(data){
+  otpFormState = {
+    name: $('#f-name').value.trim(),
+    slug: slugInput.value,
+    phone: $('#f-phone').value.trim(),
+    pass: $('#f-pass').value
+  };
+  $('#otp-phone').textContent = data.phone_masked || '';
+  $('#regForm').style.display = 'none';
+  $('#otp-step').style.display = 'block';
+  $('#f-otp').value = data.dev_code || '';
+  $('#otp-msg').className = data.dev_code ? 'msg warn' : 'msg';
+  $('#otp-msg').textContent = data.dev_code ? 'حالت توسعه: کد پر شد.' : '';
+  $('#f-otp').focus();
+}
+$('#otp-btn').addEventListener('click', async () => {
+  const btn = $('#otp-btn'), msg = $('#otp-msg');
+  const code = $('#f-otp').value.trim();
+  if (code.length !== 5) { msg.className='msg bad'; msg.textContent='کد ۵ رقمی را وارد کنید.'; return; }
+  if (!otpFormState) return;
+  btn.disabled = true; btn.textContent = 'در حال تأیید...';
+  msg.className='msg'; msg.textContent='';
+  try {
+    const r = await fetch('register.php',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(Object.assign({}, otpFormState, {otp: code}))
+    });
+    const t = await r.text();
+    let j; try{ j=JSON.parse(t); }catch(_){ throw new Error('پاسخ سرور نامعتبر'); }
+    if (!j.ok) throw new Error(j.err||'کد نادرست است');
+    msg.className='msg ok'; msg.textContent='منوی تو ساخته شد!';
+    setTimeout(()=>{location.href=j.data.url;},1200);
+  } catch(err) {
+    msg.className='msg bad'; msg.textContent=err.message;
+    btn.disabled = false; btn.textContent = 'تأیید و ساخت منو';
+  }
+});
+$('#otp-back').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('#otp-step').style.display = 'none';
+  $('#regForm').style.display = 'block';
+});
 </script>
 </body>
 </html>

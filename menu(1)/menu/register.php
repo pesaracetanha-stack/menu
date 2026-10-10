@@ -6,6 +6,9 @@ error_reporting(E_ALL);
 ob_start();
 
 require __DIR__ . '/api/lib/paths.php';
+require_once __DIR__ . '/api/lib/platform-auth.php';
+require_once __DIR__ . '/api/lib/sms.php';
+require_once __DIR__ . '/rate-limit.php';
 
 function p_json_dbg(bool $ok, ?string $err = null, $data = null): void {
   while (ob_get_level() > 0) { ob_end_clean(); }
@@ -70,6 +73,46 @@ function copy_tree(string $src, string $dst): void {
     else copy($s, $d);
   }
 }
+
+/* ═══ REGISTER_OTP_V1: تأیید پیامکی ثبت‌نام ═══ */
+$otpCode = trim((string)($in['otp'] ?? ''));
+
+if ($otpCode === '') {
+  /* ── مرحلهٔ ۱: صدور و ارسال کد ── */
+  $clientIp = rate_limit_client_ip();
+  if (!rate_limit_check("reg:ip:$clientIp", 5, 3600)) {
+    p_json_dbg(false, 'تلاش‌های بیش از حد از این دستگاه — یک ساعت دیگر امتحان کنید');
+  }
+  if (!rate_limit_check("reg:phone:$phone", 3, 3600)) {
+    p_json_dbg(false, 'برای این شماره بیش از حد کد ارسال شد — یک ساعت دیگر امتحان کنید');
+  }
+  $tCheck = p_tenants_load();
+  foreach ($tCheck['tenants'] as $x) {
+    if (($x['slug'] ?? '') === $slug) {
+      p_json_dbg(false, 'این آدرس قبلاً گرفته شده — یکی دیگر امتحان کنید');
+    }
+  }
+  $smsOk = sms_issue_code($phone);
+  $isLocal = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost:8000','127.0.0.1:8000','localhost','127.0.0.1'], true);
+  if (!$smsOk && !$isLocal) {
+    p_json_dbg(false, 'ارسال پیامک تأیید ناموفق بود — با پشتیبانی تماس بگیرید');
+  }
+  $respData = [
+    'need_otp'     => true,
+    'phone_masked' => substr($phone, 0, 4) . '****' . substr($phone, -2),
+  ];
+  if ($isLocal) {
+    $sec = sec_load();
+    $respData['dev_code'] = $sec['otps'][$phone]['code'] ?? null;
+  }
+  p_json_dbg(true, null, $respData);
+}
+
+/* ── مرحلهٔ ۲: تأیید کد و ادامهٔ ساخت ── */
+if (!sms_verify_code($phone, $otpCode)) {
+  p_json_dbg(false, 'کد تأیید نادرست یا منقضی شده است');
+}
+/* ═══ پایان REGISTER_OTP_V1 ═══ */
 
 try {
   $dst = p_lock(function (array &$t) use ($name, $slug, $phone, $pass, $cfg) {
