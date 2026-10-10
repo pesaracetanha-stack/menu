@@ -3,6 +3,7 @@
    پنل کافه‌دار — داشبورد
    ════════════════════════════════════════════════════════════ */
 declare(strict_types=1);
+require_once __DIR__ . '/../../bootstrap-i18n.php';
  $slug = basename(__DIR__);
 /* v5: آدرس‌ها از خود درخواست محاسبه می‌شوند (قابل‌حمل روی هر دامنه/پوشه) */
  $sch   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';

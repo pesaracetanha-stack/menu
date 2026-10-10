@@ -29,12 +29,14 @@ require_once __DIR__ . '/api/lib/auth.php';   /* t_license اینجاست — ن
 
  $links = [
   ['ic'=>'⚙️','t'=>'پنل مدیریت','d'=>'منو، طراحی، سفارش‌ها، مشتریان و تنظیمات','url'=>'panel-admin.php?role=admin','full'=>$base.'/panel-admin.php?role=admin'],
+  /* DESIGN_CARD_V1 */
+  ['ic'=>'🎨','t'=>'طراحی منو','d'=>'ساخت و ویرایش منو، دسته‌بندی، آیتم و تصاویر','url'=>'index.html','full'=>$base.'/index.html'],
   ['ic'=>'💳','t'=>'صندوق','d'=>'ثبت سفارش حضوری، رسید و تسویه','url'=>'cashier.html','full'=>$base.'/cashier.html'],
   ['ic'=>'🍳','t'=>'آشپزخانه','d'=>'صف سفارش‌های زنده و «آماده شد»','url'=>'kds.html','full'=>$base.'/kds.html'],
  ];
 /* v5: پرسنل (ورود با پین) فقط صندوق و آشپزخانه را می‌بیند — کارت مدیریت حذف می‌شود */
  $isStaff = ($_SESSION['tenant_role'] ?? 'admin') !== 'admin';
- if ($isStaff) $links = array_values(array_filter($links, fn($l) => $l['url'] !== 'panel-admin.php?role=admin'));
+ if ($isStaff) $links = array_values(array_filter($links, fn($l) => !in_array($l['url'], ['panel-admin.php?role=admin','index.html'], true)));
  $faNum = fn($n) => str_replace(array_map('strval', range(0,9)), ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'], (string)$n);
 ?>
 <!DOCTYPE html>
@@ -85,6 +87,31 @@ body{font-family:Vazirmatn,sans-serif;background:var(--bg);color:var(--ink);min-
     <div class="lic bad">⏳ لایسنس منقضی یا معلق است — برای تمدید با پشتیبانی در تماس باشید.</div>
   <?php endif; ?>
 
+  <?php /* SETUP_CHECKLIST_V1 */
+    $__cl = [
+      ['t' => 'افزودن اولین دسته‌بندی منو', 'u' => 'index.html',                              'd' => !empty($db['menu']['cats'] ?? [])],
+      ['t' => 'تنظیم ساعت کاری کافه',        'u' => 'panel-admin.php?role=admin&tab=brand', 'd' => !empty((string)($db['menu']['brand']['hours']   ?? ''))],
+      ['t' => 'افزودن آدرس کافه',            'u' => 'panel-admin.php?role=admin&tab=brand', 'd' => !empty((string)($db['menu']['brand']['address'] ?? ''))],
+      ['t' => 'بارگذاری لوگو',               'u' => 'panel-admin.php?role=admin&tab=brand', 'd' => !empty((string)($db['menu']['brand']['logo']    ?? ''))],
+    ];
+    $__done  = count(array_filter($__cl, fn($x) => $x['d']));
+    $__total = count($__cl);
+  ?>
+  <?php if ($__done < $__total && !$isStaff): ?>
+  <div class="setup-card" style="margin-top:16px;background:var(--panel2,#F2EADA);border:1px solid var(--line,#DFD2B6);border-radius:14px;padding:14px 16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <b style="font-size:15px">🚀 راهنمای شروع</b>
+      <span style="font-size:12px;color:var(--ink2,#7D6C54)"><?= $__done ?> از <?= $__total ?> انجام شد</span>
+    </div>
+    <?php foreach ($__cl as $__item): ?>
+      <a href="<?= htmlspecialchars($__item['u']) ?>" style="display:flex;align-items:center;gap:8px;padding:8px 0;color:inherit;text-decoration:none;border-top:1px dashed var(--line,#DFD2B6)">
+        <span style="font-size:16px;flex:none"><?= $__item['d'] ? '✅' : '⬜' ?></span>
+        <span style="flex:1;<?= $__item['d'] ? 'text-decoration:line-through;opacity:.55' : '' ?>"><?= htmlspecialchars($__item['t']) ?></span>
+        <?php if (!$__item['d']): ?><span style="color:var(--acc,#B4531F);font-size:13px;flex:none">شروع ›</span><?php endif; ?>
+      </a>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
   <div class="grid" style="margin-top:16px">
     <?php foreach ($links as $l): ?>
       <a class="card" href="<?= htmlspecialchars($l['url']) ?>">
