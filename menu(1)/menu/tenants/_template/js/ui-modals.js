@@ -187,6 +187,62 @@ function smsCfgModal(){
 }
 
 /* ═══ v5.0.5-test.5: پیامک گروهی به اعضای باشگاه ═══ */
+/* PAY_UI_V1 */
+function payFormBody(){
+  const g = (id) => document.getElementById(id);
+  const merchant = g('pay-merchant') ? g('pay-merchant').value.trim() : '';
+  const sandbox  = g('pay-sandbox')  ? g('pay-sandbox').checked : false;
+  return {
+    merchant: merchant,
+    sandbox:  sandbox ? 1 : 0,
+    en:       merchant !== '' ? 1 : 0
+  };
+}
+
+function payCfgModal(){
+  const p = (Store.db.payment) || {};
+  const st = p.st && p.st.lastTest ? p.st.lastTest : null;
+  const lastMsg = st ? (st.ok ? '✅ ' + esc(st.msg) : '⚠️ ' + esc(st.msg)) : '';
+  const lastColor = st && st.ok ? '#4F7A3D' : '#B4531F';
+
+  ui.modal(`
+    <div style="background:#F2EADA;border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;line-height:1.9">
+      <b>💳 درگاه پرداخت زرین‌پال</b><br>
+      <span>برای دریافت پرداخت آنلاین از مشتریان، شما به یک «مرچنت کد» اختصاصی نیاز دارید که پول مستقیم به حساب بانکی خودتان واریز می‌شود.</span>
+    </div>
+
+    <div style="border:1px dashed #DFD2B6;border-radius:10px;padding:12px;margin-bottom:12px">
+      <b style="font-size:13px;color:#B4531F">📋 مرحله ۱ — دریافت مرچنت کد</b>
+      <ol style="margin:8px 0 8px 18px;font-size:13px;line-height:2">
+        <li>روی دکمه «ورود به زرین‌پال» زیر کلیک کنید</li>
+        <li>در سایت زرین‌پال ثبت‌نام کنید (با موبایل + کد ملی)</li>
+        <li>مدارک هویتی و شماره شبا بانکی خود را آپلود کنید</li>
+        <li>پس از تأیید (معمولاً ۱ تا ۳ روز کاری)، مرچنت کد ۳۶ کاراکتری به شما داده می‌شود</li>
+      </ol>
+      <a href="https://www.zarinpal.com/auth/register" target="_blank" rel="noopener" class="btn" style="display:inline-block;text-decoration:none;padding:8px 16px">🔗 ورود به زرین‌پال</a>
+    </div>
+
+    <div style="border:1px dashed #DFD2B6;border-radius:10px;padding:12px;margin-bottom:12px">
+      <b style="font-size:13px;color:#B4531F">🔑 مرحله ۲ — وارد کردن مرچنت کد</b>
+      <label class="f" style="margin-top:8px">
+        <span>مرچنت کد ۳۶ کاراکتری ${p.merchantSet ? '(فعلاً: ' + esc(p.merchantMasked || '') + ' — برای تغییر، مقدار جدید بنویسید)' : ''}</span>
+        <input id="pay-merchant" dir="ltr" autocomplete="off" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      </label>
+      <label class="f chk"><input type="checkbox" id="pay-sandbox" ${p.sandbox ? 'checked' : ''}><span>حالت تست (Sandbox) — بدون پرداخت واقعی</span></label>
+    </div>
+
+    <p class="mini" id="pay-test-out" style="color:${lastColor}">${lastMsg}</p>
+    <p class="mini">🔒 مرچنت کد شما به صورت امن در دیتابیس کافه ذخیره می‌شود و هرگز به مرورگر کاربران نمایش داده نمی‌شود.</p>
+
+    <div class="m-acts">
+      <button class="btn" data-act="pay-cfg-save">${ic('check',14)} ذخیره</button>
+      <button class="btn ghost" data-act="pay-test">${ic('refresh',14)} ذخیره و تست اتصال</button>
+      <button class="btn ghost" data-act="close-modal">انصراف</button>
+    </div>`,
+    {title:'درگاه پرداخت — تنظیمات'}
+  );
+}
+/* پایان PAY_UI_V1 */
 function smsSendModal(){
  const members=(Store.db.customers||[]).filter(c=>/^09\d{9}$/.test(String(c.phone||'')));
  if(!members.length){ ui.toast({msg:'هنوز عضوی با شمارهٔ موبایل ثبت نشده است'}); return; }

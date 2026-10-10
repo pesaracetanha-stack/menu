@@ -8,7 +8,8 @@ require_once __DIR__ . '/modules/orders.php';
 require_once __DIR__ . '/modules/reviews.php';
 require_once __DIR__ . '/modules/upload.php';
 require_once __DIR__ . '/modules/excel.php';   /* v5.0.4: ایمپورت اکسل منو */
-require_once __DIR__ . '/modules/sms.php';     /* v5.0.5-test.5: پنل پیامکی هر کافه */
+require_once __DIR__ . '/modules/sms.php';
+require_once __DIR__ . '/modules/payment.php';   /* v5.0.6: درگاه پرداخت */     /* v5.0.5-test.5: پنل پیامکی هر کافه */
 
 header('Content-Type: application/json; charset=utf-8');
 function jout(bool $ok, ?string $err = null, $data = null): void {
@@ -49,11 +50,12 @@ $staffPost  = ['order_pay', 'order_ready', 'order_deliver', 'save_shift',
                'save_tables', 'save_reservations', 'save_invoices',
                'reserve_set', 'notifs_read',
                'sms_send_one'];   /* v5.0.5-test.1: کنترل رزرو + خواندن پیام‌ها · test.5: پیامک تکی فاکتور */
-$adminGet   = ['backup', 'export_status', 'sms_state'];   /* v5.0.5-test.5: وضعیت پنل پیامکی */
+$adminGet   = ['backup', 'export_status', 'sms_state', 'payment_state'];   /* v5.0.5-test.5: وضعیت پنل پیامکی */
 $adminPost  = ['review_toggle', 'review_del',
                'save_menu', 'save_settings', 'save_promos', 'save_users',
                'save_palettes', 'save_setup', 'export_request', 'excel_apply', 'pw_audit', 'notify_send',
-               'sms_cfg_save', 'sms_test', 'sms_sync', 'sms_bulk_send'];   /* v5.0.5: بررسی رمز ضعیف · test.1: پیام دستی مدیر · test.5: پنل پیامکی */
+               'sms_cfg_save', 'sms_test', 'sms_sync', 'sms_bulk_send',
+               'payment_cfg_save', 'payment_test'];   /* v5.0.5: بررسی رمز ضعیف · test.1: پیام دستی مدیر · test.5: پنل پیامکی */
 
 try {
   if ($_SERVER['REQUEST_METHOD'] === 'GET') {

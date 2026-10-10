@@ -399,6 +399,23 @@ function settingsHTML(){
     <input data-input="pm-off" inputmode="numeric" placeholder="٪" value="${esc(App.adm.nu.off)}" style="flex:1">
     <button class="btn sm" data-act="promo-new">${ic('plus',13)}</button></div>
    <p class="mini">مشتری کد را در سبد خرید وارد می‌کند.</p></section>
+  <section class="setsec"><h3>${ic('card',15)} درگاه پرداخت آنلاین</h3>
+   ${(()=>{
+     const p = (Store.db.payment) || {};
+     const isOn = p.en && p.merchantSet;
+     const status = isOn
+       ? '<span class="tagpill" style="background:#E8F4E3;color:#3D6F2B">متصل به ' + esc(p.provFa || 'زرین‌پال') + '</span>'
+       : '<span class="tagpill">درگاه وصل نیست</span>';
+     const st = p.st && p.st.lastTest;
+     const lastMsg = st
+       ? (st.ok ? '<p class="mini" style="color:#4F7A3D">✅ ' + esc(st.msg) + '</p>' : '<p class="mini" style="color:#B4531F">⚠️ ' + esc(st.msg) + '</p>')
+       : '';
+     return status +
+       '<p class="mini">با اتصال درگاه پرداخت، مشتریان می‌توانند سفارش خود را آنلاین پرداخت کنند. پول مستقیماً به حساب بانکی خودتان واریز می‌شود.</p>' +
+       lastMsg +
+       '<button class="btn sm" data-act="pay-cfg">' + ic('sliders',13) + ' تنظیمات درگاه پرداخت</button>';
+   })()}
+  </section>
   <section class="setsec"><h3>${ic('user',15)} کاربران صندوق و آشپزخانه</h3>
    ${Store.db.users.length?Store.db.users.map(u=>lrow(esc(u.name),[u.phone?('موبایل '+fa(u.phone)):'',u.pin?'پین دارد':'',u.ph?'رمز دارد':''].filter(Boolean).join(' · ')||'بدون راه ورود',`<button class="icobtn xs danger" data-act="user-del" data-id="${u.id}">${ic('trash',12)}</button>`)).join(''):'<p class="mini">کاربری ثبت نشده — برای پرسنل، موبایل و رمز ثبت کنید تا مثل مدیر با «نام کاربری + رمز» وارد شوند.</p>'}
    <div class="promoline" style="margin-top:10px">
