@@ -29,6 +29,31 @@ function sms_send_code(string $phone, string $code): bool {
   return is_array($j) && ($j['return']['status'] ?? 500) === 200;
 }
 
+/* پیامک خوش‌آمدگویی پس از ثبت‌نام موفق (اختیاری — فقط اگر template_welcome تنظیم شده) */
+function sms_send_welcome(string $phone, string $cafeName): bool {
+  $cfg = require dirname(__DIR__, 2) . '/config.php';
+  $s   = $cfg['sms'];
+  if (empty($s['key']) || empty($s['template_welcome'])) return false;
+  $phone = preg_replace('/\D/', '', $phone);
+  $token = mb_substr($cafeName, 0, 20, 'UTF-8');
+  switch ($s['provider']) {
+    case 'kavenegar':
+      $url = 'https://api.kavenegar.com/v1/' . rawurlencode($s['key'])
+           . '/verify/lookup.json?receptor=' . rawurlencode($phone)
+           . '&token=' . rawurlencode($token)
+           . '&template=' . rawurlencode($s['template_welcome']);
+      break;
+    default:
+      return false;
+  }
+  $ctx = stream_context_create(['http' => ['timeout' => 8, 'ignore_errors' => true]]);
+  $res = @file_get_contents($url, false, $ctx);
+  if ($res === false) return false;
+  $j = json_decode($res, true);
+  return is_array($j) && ($j['return']['status'] ?? 500) === 200;
+}
+
+
 /* تولید و نگه‌داری کد تأیید (۵ دقیقه اعتبار) */
 function sms_issue_code(string $phone): bool {
   if (!sec_file_ok()) return false;

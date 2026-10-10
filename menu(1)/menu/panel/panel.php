@@ -5,6 +5,7 @@ require_once __DIR__ . '/../api/lib/platform-admin.php';
 require_once __DIR__ . '/../api/lib/paths.php';
 require_once __DIR__ . '/../api/lib/export-control.php';
 require_once __DIR__ . '/../api/lib/updater.php';
+require_once __DIR__ . '/../bootstrap-i18n.php';
 sec_session();
 pauth_require();
 
@@ -164,8 +165,8 @@ function plat_ev_fa(string $ev): string {
       <div class="st"><b><?= $stats['orders'] ?></b><span>سفارش کل</span></div>
       <div class="st"><b><?= $stats['customers'] ?></b><span>مشتری</span></div>
       <div class="st"><b><?= $stats['items'] ?></b><span>آیتم منو</span></div>
-      <div class="st"><b><?= round($totalMb, 1) ?></b><span>MB مصرفی</span></div>
-      <div class="st"><b><?= $cfg['limits']['upload_mb'] * max(1, $stats['total']) ?></b><span>MB سقف مجموع</span></div>
+      <div class="st"><b><?= pnum(round($totalMb, 1)) ?></b><span>MB مصرفی</span></div>
+      <div class="st"><b><?= pnum($cfg['limits']['upload_mb'] * max(1, $stats['total'])) ?></b><span>MB سقف مجموع</span></div>
     </div>
 
     <div class="tools">
@@ -181,10 +182,10 @@ function plat_ev_fa(string $ev): string {
       <p class="mini">
         نسخهٔ نصب‌شده: <b dir="ltr"><?= htmlspecialchars($updVer) ?></b>
         <?= $updCfgVer !== '' && $updCfgVer !== $updVer ? '<span class="mini">· config: <span dir="ltr">' . htmlspecialchars($updCfgVer) . '</span></span>' : '' ?>
-        <?= !empty($updMan['released']) ? '· انتشار: ' . htmlspecialchars((string)$updMan['released']) : '' ?>
+        <?= !empty($updMan['released']) ? '· انتشار: ' . htmlspecialchars(jdate((string)$updMan['released'], 'Y/m/d')) : '' ?>
       </p>
       <?php if (!empty($updMan['notes_fa'])): ?><p class="mini" dir="auto">📝 <?= htmlspecialchars((string)$updMan['notes_fa']) ?></p><?php endif; ?>
-      <?php if ($updBk): ?><p class="mini">💾 آخرین پشتیبان: <span dir="ltr"><?= htmlspecialchars(basename($updBk)) ?></span> (<?= date('m-d H:i', (int)filemtime($updBk)) ?> — <?= round((int)filesize($updBk) / 1048576, 1) ?> MB)</p><?php endif; ?>
+      <?php if ($updBk): ?><p class="mini">💾 آخرین پشتیبان: <span dir="ltr"><?= htmlspecialchars(basename($updBk)) ?></span> (<?= jdate((int)filemtime($updBk), 'm/d H:i') ?> — <?= pnum(round((int)filesize($updBk) / 1048576, 1)) ?> MB)</p><?php endif; ?>
 
       <form method="post" enctype="multipart/form-data" style="margin:10px 0" onsubmit="return confirm('آپدیت نصب شود؟\nابتدا پشتیبان خودکار گرفته می‌شود و دادهٔ زندهٔ کافه‌ها دست‌نخورده می‌ماند.')">
         <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
@@ -232,7 +233,7 @@ function plat_ev_fa(string $ev): string {
       <?php endif; ?>
 
       <?php if ($updLogs): ?>
-        <p class="mini">آخرین نصب: <?= date('m-d H:i', (int)$updLogs[0]['ts']) ?> — نسخهٔ <span dir="ltr"><?= htmlspecialchars((string)($updLogs[0]['to'] ?? '?')) ?></span> (<?= (int)($updLogs[0]['applied'] ?? 0) ?> فایل)</p>
+        <p class="mini">آخرین نصب: <?= jdate((int)$updLogs[0]['ts'], 'm/d H:i') ?> — نسخهٔ <span dir="ltr"><?= htmlspecialchars((string)($updLogs[0]['to'] ?? '?')) ?></span> (<?= (int)($updLogs[0]['applied'] ?? 0) ?> فایل)</p>
       <?php endif; ?>
     </div>
 
@@ -249,9 +250,9 @@ function plat_ev_fa(string $ev): string {
             <?php elseif ($st==='denied'): ?><span class="pill bad">ردشده</span><?php endif; ?>
           </div>
           <div class="ten-meta">
-            <span>تاریخ: <?= date('Y-m-d H:i', (int)($r['ts'] ?? 0)) ?></span>
+            <span>تاریخ: <?= jdate((int)($r['ts'] ?? 0), 'Y/m/d H:i') ?></span>
             <?php if (!empty($r['note'])): ?><span dir="auto">یادداشت مشتری: <?= htmlspecialchars($r['note']) ?></span><?php endif; ?>
-            <?php if ($st==='approved'): ?><span>انقضای لینک: <?= date('Y-m-d H:i', (int)($r['expires'] ?? 0)) ?></span><?php endif; ?>
+            <?php if ($st==='approved'): ?><span>انقضای لینک: <?= jdate((int)($r['expires'] ?? 0), 'Y/m/d H:i') ?></span><?php endif; ?>
           </div>
           <?php if ($st==='pending'): ?>
           <div class="ten-ops">
@@ -309,14 +310,14 @@ function plat_ev_fa(string $ev): string {
                 <span class="pill bad"><?= htmlspecialchars($lic['status']) ?></span>
               <?php endif; ?>
             </span>
-            <span>فضا: <b><?= $x['size_mb'] ?></b> MB</span>
+            <span>فضا: <b><?= pnum($x['size_mb']) ?></b> MB</span>
           </div>
           <div class="ten-meta" dir="auto">
             <span>🍽 <?= $det['items'] ?> آیتم / <?= $det['cats'] ?> دسته</span>
             <span>🧾 <?= $det['orders'] ?> سفارش (<?= $det['orders24h'] ?> در ۲۴س)</span>
             <span>👥 <?= $det['customers'] ?> مشتری</span>
             <?php if ($det['resv_pending']): ?><span class="pill warn">⏰ <?= $det['resv_pending'] ?> رزرو در انتظار</span><?php endif; ?>
-            <?php if ($det['last_order']): ?><span>آخرین سفارش: <?= date('m-d H:i', (int)($det['last_order'] / 1000)) ?></span><?php endif; ?>
+            <?php if ($det['last_order']): ?><span>آخرین سفارش: <?= jdate((int)($det['last_order'] / 1000), 'm/d H:i') ?></span><?php endif; ?>
           </div>
           <div class="ten-ops">
             <?php if ($lic['status'] !== 'active'): ?>
@@ -368,10 +369,10 @@ function plat_ev_fa(string $ev): string {
             <div class="dgrid">
               <span>نام برند منو: <b><?= htmlspecialchars($det['brand'] ?: '—') ?></b></span>
               <span>راه‌اندازی ویزارد: <b><?= $det['setup_done'] ? 'انجام شده' : 'هنوز نشده' ?></b></span>
-              <span>تاریخ ثبت: <b><?= $det['created'] ? date('Y-m-d', (int)($det['created'] / 1000)) : '—' ?></b></span>
+              <span>تاریخ ثبت: <b><?= $det['created'] ? jdate((int)($det['created'] / 1000), 'Y/m/d') : '—' ?></b></span>
               <span>پرسنل: <b><?= $det['staff'] ?></b> کاربر</span>
               <span>رزرو در انتظار تأیید: <b><?= $det['resv_pending'] ?></b></span>
-              <span>حجم کل: <b><?= $x['size_mb'] ?></b> MB از <?= $cfg['limits']['upload_mb'] ?> MB</span>
+              <span>حجم کل: <b><?= pnum($x['size_mb']) ?></b> MB از <?= pnum($cfg['limits']['upload_mb']) ?> MB</span>
             </div>
           </details>
           <?php $staff = plat_users($x['slug']); if ($staff): ?>
@@ -405,8 +406,8 @@ function plat_ev_fa(string $ev): string {
             <?php else: ?><span class="pill ok">قابل بازیابی</span><?php endif; ?>
           </div>
           <div class="ten-meta">
-            <span>حذف: <?= date('Y-m-d H:i', (int)$t['ts']) ?></span>
-            <span>فضا: <?= $t['size_mb'] ?> MB</span>
+            <span>حذف: <?= jdate((int)$t['ts'], 'Y/m/d H:i') ?></span>
+            <span>فضا: <?= pnum($t['size_mb']) ?> MB</span>
             <span>وضعیت لایسنس هنگام حذف: <?= htmlspecialchars($t['lic']) ?></span>
           </div>
           <div class="ten-ops">
@@ -431,7 +432,7 @@ function plat_ev_fa(string $ev): string {
       <h2>📜 لاگ عملیات (۶۰ رویداد آخر)</h2>
       <?php if (!$aud): ?><p class="mini">لاگی نیست.</p><?php endif; ?>
       <?php foreach ($aud as $a): ?>
-        <div class="mini" style="border-bottom:1px dashed #DFD2B6;padding:3px 0"><?= date('m-d H:i', (int)$a['ts']) ?> — <?= htmlspecialchars(plat_ev_fa((string)$a['ev'])) ?> <span dir="ltr" class="mini"><?= htmlspecialchars(json_encode($a['d'] ?? [], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)) ?></span></div>
+        <div class="mini" style="border-bottom:1px dashed #DFD2B6;padding:3px 0"><?= jdate((int)$a['ts'], 'm/d H:i') ?> — <?= htmlspecialchars(plat_ev_fa((string)$a['ev'])) ?> <span dir="ltr" class="mini"><?= htmlspecialchars(json_encode($a['d'] ?? [], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)) ?></span></div>
       <?php endforeach; ?>
     </div>
 
