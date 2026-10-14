@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          $__s = $__lic['status'] ?? '';
                          $__d = $__lic['days_left'] ?? null;
                          $__isExp = ($__s === 'active' && $__d !== null && $__d <= 7)
-                                  || ($__s === 'trial'  && $__d !== null && $__d <= 3);
+                                  || ($__s === 'trial'  && $__d !== null && $__d <= 7);  /* FIX_THRESHOLD_V1 */
                          if (!$__isExp) continue;
                          try { plat_renew((string)$__x['slug'], $__days); $__cnt++; }
                          catch (Throwable $e) { $__fail++; }

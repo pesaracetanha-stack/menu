@@ -281,7 +281,7 @@ function plat_stats(): array {
         break;
       case 'trial':    /* FIX_STATS_V1 */
         $s['trial']++;
-        if ($x['lic']['days_left'] !== null && $x['lic']['days_left'] <= 3) {
+        if ($x['lic']['days_left'] !== null && $x['lic']['days_left'] <= 7) {  /* FIX_THRESHOLD_V1 */
           $s['expiring']++;
           $s['expiring_list'][] = ['slug'=>$x['slug'],'name'=>$x['name'],'days_left'=>(int)$x['lic']['days_left'],'trial'=>true];
         }
