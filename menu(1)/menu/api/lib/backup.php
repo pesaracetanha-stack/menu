@@ -227,3 +227,144 @@ function bak_status(): array {
     'list'          => array_slice($list, 0, 20), /* ۲۰ مورد آخر */
   ];
 }
+/* ═══ SMS_REMINDER_V1: یادآوری انقضا با SMS ═══ */
+function sms_reminder_state_file(): string {
+  return dirname(__DIR__, 2) . '/data/sms-reminders.json';
+}
+function sms_reminder_state(): array {
+  $f = sms_reminder_state_file();
+  if (!is_file($f)) return [];
+  $j = json_decode((string)@file_get_contents($f), true);
+  return is_array($j) ? $j : [];
+}
+function sms_reminder_state_save(array $s): void {
+  $f = sms_reminder_state_file();
+  $dir = dirname($f);
+  if (!is_dir($dir)) @mkdir($dir, 0755, true);
+  @file_put_contents($f, json_encode($s, JSON_UNESCAPED_UNICODE), LOCK_EX);
+}
+
+/* آیا امروز برای این کافه SMS رفته؟ */
+function sms_reminder_sent_today(string $slug, string $level): bool {
+  $state = sms_reminder_state();
+  $today = date('Y-m-d');
+  $key = "$slug:$level";
+  return isset($state[$key]) && $state[$key] === $today;
+}
+function sms_reminder_mark_sent(string $slug, string $level): void {
+  $state = sms_reminder_state();
+  $today = date('Y-m-d');
+  $key = "$slug:$level";
+  $state[$key] = $today;
+  /* پاکسازی رکوردهای قدیمی‌تر از ۷ روز */
+  $cutoff = date('Y-m-d', time() - 7 * 86400);
+  foreach ($state as $k => $v) {
+    if ($v < $cutoff) unset($state[$k]);
+  }
+  sms_reminder_state_save($state);
+}
+
+/* ارسال SMS یادآوری با کلید پلتفرم */
+function sms_reminder_send(string $phone, string $cafe, int $days, string $template): bool {
+  $cfgFile = dirname(__DIR__, 2) . '/config.php';
+  if (!is_file($cfgFile)) return false;
+  $cfg = require $cfgFile;
+  $s = $cfg['sms'] ?? [];
+  if (empty($s['key']) || empty($template)) return false;
+
+  $phone = preg_replace('/\D/', '', $phone);
+  if (!preg_match('/^09\d{9}$/', $phone)) return false;
+
+  switch ($s['provider'] ?? 'kavenegar') {
+    case 'kavenegar':
+      $url = 'https://api.kavenegar.com/v1/' . rawurlencode($s['key'])
+           . '/verify/lookup.json?receptor=' . rawurlencode($phone)
+           . '&token=' . rawurlencode((string)$days)
+           . '&template=' . rawurlencode($template);
+      break;
+    default:
+      return false;
+  }
+
+  $ctx = stream_context_create(['http' => ['timeout' => 8, 'ignore_errors' => true]]);
+  $res = @file_get_contents($url, false, $ctx);
+  if ($res === false) return false;
+  $j = json_decode($res, true);
+  return is_array($j) && ($j['return']['status'] ?? 500) === 200;
+}
+
+/* اجرای کامل: چک همه کافه‌ها و ارسال SMS */
+function sms_reminder_run(): array {
+  $cfgFile = dirname(__DIR__, 2) . '/config.php';
+  if (!is_file($cfgFile)) return ['sent' => 0, 'skipped' => 0, 'reason' => 'no config'];
+  $cfg = require $cfgFile;
+  $smsCfg = $cfg['sms'] ?? [];
+
+  $hasKey = !empty($smsCfg['key']);
+  $tplExpiry = (string)($smsCfg['template_expiry'] ?? '');
+  $tplExpired = (string)($smsCfg['template_expired'] ?? '');
+
+  if (!$hasKey) {
+    return ['sent' => 0, 'skipped' => 0, 'reason' => 'no_sms_key'];
+  }
+
+  if (!function_exists('plat_list')) {
+    require_once __DIR__ . '/platform-admin.php';
+  }
+  $list = plat_list();
+  $sent = 0; $skipped = 0;
+
+  foreach ($list as $x) {
+    $slug = (string)($x['slug'] ?? '');
+    $phone = (string)($x['phone'] ?? '');
+    $name = (string)($x['name'] ?? $slug);
+    $lic = $x['lic'] ?? [];
+    $status = (string)($lic['status'] ?? '');
+    $days = (int)($lic['days_left'] ?? 999);
+
+    if ($phone === '') { $skipped++; continue; }
+    if (!in_array($status, ['active', 'trial'], true)) { $skipped++; continue; }
+
+    /* کافه‌ای که منقضی شده (روز منفی یا صفر) */
+    if ($days <= 0) {
+      $level = 'expired';
+      $tpl = $tplExpired !== '' ? $tplExpired : $tplExpiry;
+      if ($tpl === '') { $skipped++; continue; }
+      if (sms_reminder_sent_today($slug, $level)) { $skipped++; continue; }
+      if (sms_reminder_send($phone, $name, 0, $tpl)) {
+        sms_reminder_mark_sent($slug, $level);
+        $sent++;
+      }
+      continue;
+    }
+
+    /* یادآوری ۳ روز */
+    if ($days <= 3) {
+      $level = 'urgent';
+      if ($tplExpiry === '') { $skipped++; continue; }
+      if (sms_reminder_sent_today($slug, $level)) { $skipped++; continue; }
+      if (sms_reminder_send($phone, $name, $days, $tplExpiry)) {
+        sms_reminder_mark_sent($slug, $level);
+        $sent++;
+      }
+      continue;
+    }
+
+    /* یادآوری ۷ روز */
+    if ($days <= 7) {
+      $level = 'week';
+      if ($tplExpiry === '') { $skipped++; continue; }
+      if (sms_reminder_sent_today($slug, $level)) { $skipped++; continue; }
+      if (sms_reminder_send($phone, $name, $days, $tplExpiry)) {
+        sms_reminder_mark_sent($slug, $level);
+        $sent++;
+      }
+      continue;
+    }
+
+    $skipped++;
+  }
+
+  return ['sent' => $sent, 'skipped' => $skipped, 'reason' => 'ok'];
+}
+/* ═══ پایان SMS_REMINDER_V1 ═══ */

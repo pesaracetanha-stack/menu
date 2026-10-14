@@ -12,6 +12,8 @@ pauth_require();
 /* BACKUP_DASH_V1 */
 require_once __DIR__ . '/../api/lib/backup.php';
 try { $__bakLazy = bak_lazy_check(); } catch (Throwable $e) { $__bakLazy = null; }
+/* SMS_LAZY_V1: یادآوری انقضا با SMS */
+try { $__smsLazy = sms_reminder_run(); } catch (Throwable $e) { $__smsLazy = null; }
 
  $msg = ''; $ok = ''; $tmpPass = ''; $exportLink = '';
  $updRep = null; $updScan = null;
@@ -46,6 +48,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        $ok = "$n کافهٔ منقضی از سطل زباله پاک شد"; plat_log('trash_sweep', ['n' => $n]); break;
 
       /* ── v5.0.5-test.4: کنترل کامل کافه‌ها ── */
+      /* EXPIRY_ALERT_V1 */
+      case 'renewexpiring':
+                       $__days = max(1, (int)($_POST['days'] ?? 30));
+                       $__cnt = 0; $__fail = 0;
+                       foreach (plat_list() as $__x) {
+                         $__lic = $__x['lic'] ?? [];
+                         $__s = $__lic['status'] ?? '';
+                         $__d = $__lic['days_left'] ?? null;
+                         $__isExp = ($__s === 'active' && $__d !== null && $__d <= 7)
+                                  || ($__s === 'trial'  && $__d !== null && $__d <= 7);  /* FIX_THRESHOLD_V1 */
+                         if (!$__isExp) continue;
+                         try { plat_renew((string)$__x['slug'], $__days); $__cnt++; }
+                         catch (Throwable $e) { $__fail++; }
+                       }
+                       $ok = "تمدید گروهی: $__cnt کافه" . ($__fail > 0 ? " ($__fail ناموفق)" : '');
+                       plat_log('renewexpiring', ['ok' => $__cnt, 'fail' => $__fail, 'days' => $__days]);
+                       break;
       case 'renew':      plat_renew($_POST['slug'] ?? '', (int)($_POST['days'] ?? 365));
                          $ok = 'لایسنس تمدید شد'; break;
       case 'extendtrial': plat_extend_trial($_POST['slug'] ?? '', (int)($_POST['days'] ?? 14));
@@ -221,11 +240,41 @@ function plat_ev_fa(string $ev): string {
       </div>
     <?php endif; ?>
 
+        <?php if ($stats['expiring'] > 0): /* FIX_ALERT_POS_V1 */ ?>
+    <div style="background:#FBEAE4;border:2px solid #B4531F;border-radius:14px;padding:16px 20px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <b style="font-size:16px;color:#8A2C12">⚠️ هشدار انقضای نزدیک</b>
+          <p class="mini" style="margin:6px 0 0;color:#8A2C12;line-height:1.7">
+            <b><?= pnum($stats['expiring']) ?></b> کافه تا کمتر از ۷ روز دیگر منقضی می‌شوند.
+            برای جلوگیری از قطع سرویس، همین حالا تمدید کنید.
+          </p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <form method="post" class="inline" style="margin:0" onsubmit="return confirm('<?= pnum($stats['expiring']) ?> کافه با ۳۰ روز اضافه تمدید شوند؟')">
+            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+            <input type="hidden" name="act" value="renewexpiring">
+            <input type="hidden" name="days" value="30">
+            <button class="btn2" style="background:#B4531F;color:#fff;border-color:#B4531F">🔄 تمدید همه با ۳۰ روز</button>
+          </form>
+          <form method="post" class="inline" style="margin:0" onsubmit="return confirm('<?= pnum($stats['expiring']) ?> کافه با ۹۰ روز تمدید شوند؟')">
+            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+            <input type="hidden" name="act" value="renewexpiring">
+            <input type="hidden" name="days" value="90">
+            <button class="btn2" style="background:#4F7A3D;color:#fff;border-color:#4F7A3D">🔄 تمدید همه با ۹۰ روز</button>
+          </form>
+          <button type="button" class="btn2" onclick="document.querySelector('.chip[data-f=&quot;expiring&quot;]').click();document.getElementById('q').scrollIntoView({behavior:'smooth'})">👁 مشاهده لیست</button>
+        </div>
+      </div>
+    </div>
+    <?php endif; ?>
+
     <div class="stats">
       <div class="st"><b><?= $stats['total'] ?></b><span>کافه</span></div>
       <div class="st"><b><?= $stats['active'] ?></b><span>فعال</span></div>
       <div class="st"><b><?= $stats['trial'] ?></b><span>آزمایشی</span></div>
-      <div class="st"><b><?= $stats['suspended'] ?></b><span>معلق</span></div>
+
+<div class="st"><b><?= $stats['suspended'] ?></b><span>معلق</span></div>
       <div class="st<?= $stats['expiring'] ? ' hot' : '' ?>"><b><?= $stats['expiring'] ?></b><span>نزدیک انقضا</span></div>
       <div class="st"><b><?= $stats['orders24h'] ?></b><span>سفارش ۲۴ساعت</span></div>
       <div class="st"><b><?= $stats['orders'] ?></b><span>سفارش کل</span></div>
