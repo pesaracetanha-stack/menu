@@ -28,6 +28,12 @@ require_once __DIR__ . '/api/lib/db.php';
 require_once __DIR__ . '/api/lib/auth.php';
  $db  = t_db_get();
  $lic = t_license($db);
+/* LICENSE_GATE_V1: قفل مرحله‌ای پس از انقضا */
+ $__licDays = (int)($lic['days_left'] ?? 999);
+ $__licStat = (string)($lic['status'] ?? 'active');
+ if (($__licStat === 'active' || $__licStat === 'trial') && $__licDays < -3) {
+   header('Location: expired.php'); exit;
+ }
  $S   = $db['settings'];
  $brand = $db['menu']['brand'] ?? [];
 

@@ -23,6 +23,12 @@ require_once __DIR__ . '/api/lib/db.php';
 require_once __DIR__ . '/api/lib/auth.php';   /* t_license اینجاست — نبودِ آن یعنی Fatal 500 */
  $db    = t_db_get();
  $lic   = t_license($db);
+/* LICENSE_GATE_V1: قفل مرحله‌ای پس از انقضا */
+ $__licDays = (int)($lic['days_left'] ?? 999);
+ $__licStat = (string)($lic['status'] ?? 'active');
+ if (($__licStat === 'active' || $__licStat === 'trial') && $__licDays < -3) {
+   header('Location: expired.php'); exit;
+ }
  $brand = $db['menu']['brand']['name'] ?? $slug;
  $user  = $_SESSION['tenant_user'] ?? 'مدیر';
  $role  = $_SESSION['tenant_role'] ?? 'admin';
@@ -38,6 +44,33 @@ require_once __DIR__ . '/api/lib/auth.php';   /* t_license اینجاست — ن
  $isStaff = ($_SESSION['tenant_role'] ?? 'admin') !== 'admin';
  if ($isStaff) $links = array_values(array_filter($links, fn($l) => !in_array($l['url'], ['panel-admin.php?role=admin','index.html'], true)));
  $faNum = fn($n) => str_replace(array_map('strval', range(0,9)), ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'], (string)$n);
+
+/* FIX_BANNER_BTN_V1 */ /* FIX_BANNER_ORDER_V1: بنر هشدار انقضا (بعد از faNum) */
+ $__days = (int)($lic['days_left'] ?? 999);
+ $__status = (string)($lic['status'] ?? 'active');
+ $__showBanner = false; $__bColor = ''; $__bText = '';
+ if ($__status === 'active' && $__days <= 0) {
+   $__showBanner = true; $__bColor = '#B4531F';
+   $__bText = '🚨 اشتراک شما منقضی شده — برای ادامه سرویس، همین امروز تمدید کنید.';
+ } elseif ($__status === 'trial' && $__days <= 0) {
+   $__showBanner = true; $__bColor = '#B4531F';
+   $__bText = '🚨 دورهٔ آزمایشی تمام شد — برای ادامه، اشتراک تهیه کنید.';
+ } elseif ($__status === 'active' && $__days <= 3) {
+   $__showBanner = true; $__bColor = '#B4801F';
+   $__bText = '⚠️ تنها ' . $faNum($__days) . ' روز تا پایان اشتراک — لطفاً تمدید کنید.';
+ } elseif ($__status === 'trial' && $__days <= 3) {
+   $__showBanner = true; $__bColor = '#B4801F';
+   $__bText = '⚠️ تنها ' . $faNum($__days) . ' روز از دورهٔ آزمایشی باقی مانده — برای ادامه، اشتراک تهیه کنید.';
+ } elseif ($__status === 'active' && $__days <= 7) {
+   $__showBanner = true; $__bColor = '#8B7355';
+   $__bText = '🔔 ' . $faNum($__days) . ' روز تا پایان اشتراک باقی مانده.';
+ } elseif ($__status === 'trial' && $__days <= 7) {
+   $__showBanner = true; $__bColor = '#8B7355';
+   $__bText = '🔔 ' . $faNum($__days) . ' روز از دورهٔ آزمایشی باقی مانده.';
+ } elseif ($__status === 'suspended') {
+   $__showBanner = true; $__bColor = '#B4531F';
+   $__bText = '🚫 حساب کاربری شما معلق شده — با پشتیبانی تماس بگیرید.';
+ }
 ?>
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -112,6 +145,13 @@ body{font-family:Vazirmatn,sans-serif;background:var(--bg);color:var(--ink);min-
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
+    <?php if ($__showBanner): ?>
+  <div style="background:#fff;border:2px solid <?= $__bColor ?>;border-radius:12px;padding:14px 18px;margin:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div style="font-size:14px;color:<?= $__bColor ?>;font-weight:700;line-height:1.6"><?= htmlspecialchars($__bText) ?></div>
+    <button type="button" onclick="alert('برای تمدید اشتراک با پشتیبانی تماس بگیرید:\n\n📞 0919 834 5661\n💬 تلگرام: @GitiArts')" style="background:<?= $__bColor ?>;color:#fff;padding:8px 18px;border-radius:10px;border:0;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;white-space:nowrap">🔄 تمدید اشتراک</button>
+  </div>
+  <?php endif; ?>
+
   <div class="grid" style="margin-top:16px">
     <?php foreach ($links as $l): ?>
       <a class="card" href="<?= htmlspecialchars($l['url']) ?>">

@@ -12,6 +12,8 @@ pauth_require();
 /* BACKUP_DASH_V1 */
 require_once __DIR__ . '/../api/lib/backup.php';
 try { $__bakLazy = bak_lazy_check(); } catch (Throwable $e) { $__bakLazy = null; }
+/* SMS_LAZY_V1: یادآوری انقضا با SMS */
+try { $__smsLazy = sms_reminder_run(); } catch (Throwable $e) { $__smsLazy = null; }
 
  $msg = ''; $ok = ''; $tmpPass = ''; $exportLink = '';
  $updRep = null; $updScan = null;
