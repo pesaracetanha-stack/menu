@@ -9,6 +9,10 @@ require_once __DIR__ . '/../bootstrap-i18n.php';
 sec_session();
 pauth_require();
 
+/* BACKUP_DASH_V1 */
+require_once __DIR__ . '/../api/lib/backup.php';
+try { $__bakLazy = bak_lazy_check(); } catch (Throwable $e) { $__bakLazy = null; }
+
  $msg = ''; $ok = ''; $tmpPass = ''; $exportLink = '';
  $updRep = null; $updScan = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -48,6 +52,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          $ok = 'دورهٔ آزمایشی تمدید شد'; break;
       case 'rename':     plat_rename($_POST['slug'] ?? '', (string)($_POST['name'] ?? ''));
                          $ok = 'نام کافه عوض شد'; break;
+      /* BACKUP_ALL_V1 */
+      /* DOWNLOAD_ALL_V1 */
+      /* DOWNLOADBACKUP_V1 */
+      case 'downloadbackup':
+                       $__name = basename((string)($_POST['file'] ?? ''));
+                       if (!preg_match('/^[a-zA-Z0-9_\-]+\.zip$/', $__name)) {
+                         $msg = 'نام فایل نامعتبر';
+                         break;
+                       }
+                       $__path = __DIR__ . '/../data/exports/' . $__name;
+                       if (!is_file($__path)) {
+                         $msg = 'فایل یافت نشد';
+                         break;
+                       }
+                       plat_log('downloadbackup', ['file' => $__name]);
+                       header('Content-Type: application/zip');
+                       header('Content-Disposition: attachment; filename="' . $__name . '"');
+                       header('Content-Length: ' . (string)filesize($__path));
+                       readfile($__path);
+                       exit;
+      case 'downloadall':
+                       require_once __DIR__ . '/../api/lib/platform-admin.php';
+                       $__backupRoot = __DIR__ . '/../data/exports';   /* FIX_DL_PATH_V1 */
+                       if (!is_dir($__backupRoot)) {
+                         $msg = 'پوشه بکاپ خالی است — اول یک بکاپ بگیرید';
+                         break;
+                       }
+                       $__zips = glob($__backupRoot . '/*.zip') ?: [];
+                       if (empty($__zips)) {
+                         $msg = 'هیچ بکاپی یافت نشد — اول بکاپ بگیرید';
+                         break;
+                       }
+                       $__out = $__backupRoot . '/all-backups-' . date('Ymd-His') . '.zip';
+                       $__zip = new ZipArchive();
+                       if ($__zip->open($__out, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                         $msg = 'ساخت فایل زیپ ممکن نشد';
+                         break;
+                       }
+                       foreach ($__zips as $__f) {
+                         $__zip->addFile($__f, basename($__f));
+                       }
+                       $__zip->addFromString('README.txt', "GitiArts Backups\nGenerated: " . date('Y-m-d H:i:s') . "\nTotal backups: " . count($__zips) . "\n");
+                       $__zip->close();
+                       plat_log('downloadall', ['count' => count($__zips), 'file' => basename($__out)]);
+                       header('Content-Type: application/zip');
+                       header('Content-Disposition: attachment; filename="' . basename($__out) . '"');
+                       header('Content-Length: ' . (string)filesize($__out));
+                       readfile($__out);
+                       @unlink($__out);
+                       exit;
+      case 'backupall':
+                       $__cnt = 0; $__fail = 0;
+                       foreach (plat_list() as $__t) {
+                         try { plat_backup((string)$__t['slug']); $__cnt++; }
+                         catch (Throwable $e) { $__fail++; }
+                       }
+                       $ok = "بکاپ $__cnt کافه گرفته شد" . ($__fail > 0 ? " ($__fail ناموفق)" : '');
+                       plat_log('backupall', ['ok' => $__cnt, 'fail' => $__fail]);
+                       break;
       case 'backupdl':   $bk = plat_backup($_POST['slug'] ?? '');
                          header('Content-Type: application/zip');
                          header('Content-Disposition: attachment; filename="gitiarts-backup-' . basename($bk['path']) . '"');
@@ -289,7 +352,114 @@ function plat_ev_fa(string $ev): string {
     </div>
 
     <div class="sec">
-      <h2>کافه‌های ثبت‌شده</h2>
+    <div class="sec">
+      <?php $__bak = bak_status(); $__bakRun = $__bakLazy ?? null; ?>
+      <?php if ($__bakRun && !empty($__bakRun['ok'])): ?>
+        <div style="background:#E8F4E3;border:1px solid #BFDCA8;color:#3D6F2B;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px">
+          ✅ بکاپ خودکار اجرا شد — <?= pnum($__bakRun['ok']) ?> کافه (<?= pnum($__bakRun['duration']) ?> ثانیه)
+          <?php if (!empty($__bakRun['cleanup']['deleted'])): ?>
+            · <?= pnum($__bakRun['cleanup']['deleted']) ?> بکاپ قدیمی پاک شد
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
+      <h2 style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <span>💾 بکاپ و پایداری</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <form method="post" class="inline" style="margin:0" onsubmit="return confirm('از همه کافه‌ها بکاپ گرفته شود؟')">
+            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+            <input type="hidden" name="act" value="backupall">
+            <button class="btn2" style="font-size:13px;padding:6px 12px">💾 بکاپ الان</button>
+          </form>
+          <?php if (!empty($__bak['list'])): ?>
+          <form method="post" class="inline" style="margin:0" onsubmit="return confirm('همه بکاپ‌ها در یک فایل زیپ دانلود شود؟')">
+            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+            <input type="hidden" name="act" value="downloadall">
+            <button class="btn2" style="font-size:13px;padding:6px 12px;background:#4F7A3D">📥 دانلود همه</button>
+          </form>
+          <?php endif; ?>
+        </div>
+      </h2>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:14px 0">
+        <div style="background:#F2EADA;border-radius:10px;padding:12px">
+          <div style="font-size:12px;color:#7D6C54">آخرین بکاپ</div>
+          <div style="font-size:16px;font-weight:800;color:#271D12;margin-top:4px"><?= htmlspecialchars($__bak['last_ago']) ?></div>
+        </div>
+        <div style="background:#F2EADA;border-radius:10px;padding:12px">
+          <div style="font-size:12px;color:#7D6C54">بکاپ بعدی</div>
+          <div style="font-size:16px;font-weight:800;color:#271D12;margin-top:4px">
+            <?php $__diff = $__bak['next_run'] - time(); ?>
+            <?php if ($__diff <= 60): ?>تا چند لحظه دیگر
+            <?php elseif ($__diff < 3600): ?>تا <?= pnum((int)($__diff / 60)) ?> دقیقه دیگر
+            <?php else: ?>تا <?= pnum((int)($__diff / 3600)) ?> ساعت دیگر
+            <?php endif; ?>
+          </div>
+        </div>
+        <div style="background:#F2EADA;border-radius:10px;padding:12px">
+          <div style="font-size:12px;color:#7D6C54">تعداد بکاپ‌ها</div>
+          <div style="font-size:16px;font-weight:800;color:#271D12;margin-top:4px"><?= pnum($__bak['count_total']) ?></div>
+        </div>
+        <div style="background:#F2EADA;border-radius:10px;padding:12px">
+          <div style="font-size:12px;color:#7D6C54">حجم کل</div>
+          <div style="font-size:16px;font-weight:800;color:#271D12;margin-top:4px"><?= htmlspecialchars($__bak['size_total_h']) ?></div>
+        </div>
+      </div>
+
+      <p class="mini" style="margin:6px 0 14px">
+        🔁 بکاپ خودکار هر <b><?= pnum($__bak['interval_hours']) ?></b> ساعت یک‌بار اجرا می‌شود.
+        حداکثر <b><?= pnum($__bak['keep_per_cafe']) ?></b> بکاپ آخر هر کافه نگه داشته می‌شود
+        و بکاپ‌های قدیمی‌تر از <b><?= pnum($__bak['max_age_days']) ?></b> روز خودکار حذف می‌شوند.
+      </p>
+
+      <?php if (empty($__bak['list'])): ?>
+        <p class="mini">هنوز هیچ بکاپی گرفته نشده. روی «💾 بکاپ الان» بزنید.</p>
+      <?php else: ?>
+        <div style="max-height:340px;overflow:auto;border:1px solid #DFD2B6;border-radius:10px">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead style="background:#F2EADA;position:sticky;top:0">
+              <tr>
+                <th style="padding:8px;text-align:right">کافه</th>
+                <th style="padding:8px;text-align:right">تاریخ</th>
+                <th style="padding:8px;text-align:right">حجم</th>
+                <th style="padding:8px;text-align:right">دانلود</th>
+              </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($__bak['list'] as $__b): ?>
+              <tr style="border-top:1px solid #EFE7D6">
+                <td style="padding:8px" dir="ltr"><?= htmlspecialchars($__b['slug']) ?></td>
+                <td style="padding:8px"><?= htmlspecialchars(bak_human_ago($__b['ts'])) ?></td>
+                <td style="padding:8px"><?= htmlspecialchars(bak_human_size($__b['size'])) ?></td>
+                <td style="padding:8px">
+                  <form method="post" style="margin:0;display:inline">
+                    <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+                    <input type="hidden" name="act" value="downloadbackup">
+                    <input type="hidden" name="file" value="<?= htmlspecialchars($__b['name']) ?>">
+                    <button class="btn2" style="font-size:12px;padding:4px 10px">📥</button>
+                  </form>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+    </div>
+      <h2 style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <span>کافه‌های ثبت‌شده</span>
+        <form method="post" class="inline" onsubmit="return confirm('از همه کافه‌ها بکاپ گرفته شود؟')" style="margin:0">
+          <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+          <input type="hidden" name="act" value="backupall">
+          <button class="btn2" style="font-size:13px;padding:6px 12px">💾 بکاپ همه</button>
+        </form>
+        <form method="post" class="inline" onsubmit="return confirm('همه بکاپ‌های موجود در یک فایل زیپ دانلود شود؟')" style="margin:0">
+          <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+          <input type="hidden" name="act" value="downloadall">
+          <button class="btn2" style="font-size:13px;padding:6px 12px;background:#4F7A3D">📥 دانلود همه</button>
+        </form>
+
+      </h2>
       <div class="fwrap">
         <input type="text" id="q" placeholder="🔍 جستجوی نام یا آدرس کافه…" autocomplete="off">
         <div class="chips">

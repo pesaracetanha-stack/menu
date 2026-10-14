@@ -1,0 +1,134 @@
+<?php
+declare(strict_types=1);
+/* ═══════════════════════════════════════════════════════════
+   v5.0.6: بکاپ خودکار همه کافه‌ها
+   - همه کافه‌ها را پشت هم بکاپ می‌گیرد
+   - بکاپ‌های >۳۰ روز خودکار پاک می‌شوند
+   - در data/backups/YYYY-MM-DD/ ذخیره می‌شود
+   - لاگ در data/backups/backup.log
+   ═══════════════════════════════════════════════════════════ */
+
+if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'cli-server') {
+    http_response_code(403);
+    exit('This script must be run from CLI');
+}
+
+require_once __DIR__ . '/../api/lib/paths.php';
+require_once __DIR__ . '/../api/lib/platform-admin.php';
+
+$keepDays = 30;
+$isJson = in_array('--json', $argv, true);
+
+/* ─── شروع ─── */
+$startedAt = microtime(true);
+$startedAtHuman = date('Y-m-d H:i:s');
+
+if (!$isJson) {
+    echo "\n";
+    echo "═══════════════════════════════════════════════════════\n";
+    echo "  بکاپ خودکار GitiArts Menu\n";
+    echo "  شروع: {$startedAtHuman}\n";
+    echo "═══════════════════════════════════════════════════════\n\n";
+}
+
+$backupsDir = __DIR__ . '/../data/backups';
+if (!is_dir($backupsDir)) mkdir($backupsDir, 0755, true);
+
+/* ─── لیست کافه‌ها ─── */
+$tenants = plat_list();
+if (empty($tenants)) {
+    if ($isJson) {
+        echo json_encode(['ok' => true, 'count' => 0, 'msg' => 'هیچ کافه‌ای یافت نشد']);
+    } else {
+        echo "هیچ کافه‌ای یافت نشد.\n";
+    }
+    exit(0);
+}
+
+/* ─── بکاپ هر کافه ─── */
+$ok = 0;
+$failed = 0;
+$errors = [];
+$results = [];
+
+foreach ($tenants as $t) {
+    $slug = (string)($t['slug'] ?? '');
+    if ($slug === '') continue;
+
+    try {
+        $r = plat_backup($slug);
+        $ok++;
+        $results[] = [
+            'slug' => $slug,
+            'name' => $r['name'],
+            'size' => is_file($r['path']) ? filesize($r['path']) : 0,
+        ];
+        if (!$isJson) {
+            $size = is_file($r['path']) ? round(filesize($r['path']) / 1024, 1) : 0;
+            echo "  ✓ {$slug}  →  {$r['name']} ({$size} KB)\n";
+        }
+    } catch (Throwable $e) {
+        $failed++;
+        $errors[] = ['slug' => $slug, 'err' => $e->getMessage()];
+        if (!$isJson) {
+            echo "  ✗ {$slug}  →  " . $e->getMessage() . "\n";
+        }
+    }
+}
+
+/* ─── پاکسازی بکاپ‌های قدیمی ─── */
+$cutoff = time() - ($keepDays * 86400);
+$deleted = 0;
+
+/* الگوی ZIP: معمولاً slug-YYYYMMDD_HHMMSS.zip یا مشابه */
+$patterns = [
+    $backupsDir . '/*.zip',
+    $backupsDir . '/*/*.zip',
+];
+foreach ($patterns as $pattern) {
+    foreach (glob($pattern) ?: [] as $file) {
+        if (is_file($file) && filemtime($file) < $cutoff) {
+            @unlink($file);
+            $deleted++;
+        }
+    }
+}
+
+/* پاک کردن پوشه‌های خالی */
+foreach (glob($backupsDir . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
+    $files = glob($dir . '/*');
+    if (empty($files)) @rmdir($dir);
+}
+
+$elapsed = round(microtime(true) - $startedAt, 2);
+
+/* ─── لاگ ─── */
+$logLine = sprintf(
+    "[%s] OK=%d FAILED=%d DELETED=%d ELAPSED=%.2fs\n",
+    $startedAtHuman, $ok, $failed, $deleted, $elapsed
+);
+file_put_contents($backupsDir . '/backup.log', $logLine, FILE_APPEND | LOCK_EX);
+
+/* ─── خروجی ─── */
+if ($isJson) {
+    echo json_encode([
+        'ok'       => $failed === 0,
+        'count'    => $ok,
+        'failed'   => $failed,
+        'deleted'  => $deleted,
+        'elapsed'  => $elapsed,
+        'errors'   => $errors,
+        'results'  => $results,
+    ], JSON_UNESCAPED_UNICODE);
+} else {
+    echo "\n";
+    echo "───────────────────────────────────────────────────────\n";
+    echo "  نتیجه:\n";
+    echo "    موفق:        {$ok}\n";
+    echo "    ناموفق:      {$failed}\n";
+    echo "    پاک‌شده:      {$deleted}\n";
+    echo "    زمان:        {$elapsed} ثانیه\n";
+    echo "═══════════════════════════════════════════════════════\n\n";
+}
+
+exit($failed === 0 ? 0 : 1);
