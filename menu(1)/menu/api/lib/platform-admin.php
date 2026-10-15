@@ -467,6 +467,71 @@ function plat_trash_delete_one(string $tname): void {
 }
 
 /* پشتیبان کامل کافه (زیپ قابل‌نصب مستقل) — مسیر فایل برمی‌گردد */
+/* ═══ RESTORE_BACKUP_V1: بازگردانی از بکاپ ═══ */
+function plat_restore_backup(string $slug, string $backupName): array {
+  require_once __DIR__ . '/class-gstore.php';
+  if (!class_exists('ZipArchive')) throw new RuntimeException('افزونهٔ zip فعال نیست');
+  if (!plat_find($slug)) throw new RuntimeException('کافه یافت نشد');
+
+  $tenantDir = plat_tenant_dir($slug);
+  $backupName = basename($backupName);
+  if (!preg_match('/^[a-zA-Z0-9_\-]+\.zip$/', $backupName)) throw new RuntimeException('نام فایل نامعتبر');
+  $backupPath = dirname(__DIR__, 2) . '/data/exports/' . $backupName;
+  if (!is_file($backupPath)) throw new RuntimeException('فایل بکاپ یافت نشد');
+
+  $tmpDir = sys_get_temp_dir() . '/giti_restore_' . bin2hex(random_bytes(8));
+  if (!@mkdir($tmpDir, 0700, true)) throw new RuntimeException('ساخت پوشه موقت ممکن نشد');
+
+  try {
+    $zip = new ZipArchive();
+    if ($zip->open($backupPath) !== true) throw new RuntimeException('بازکردن زیپ ممکن نشد');
+    $zip->extractTo($tmpDir);
+    $zip->close();
+
+    $extractedCafeDir = $tmpDir . '/tenants/' . $slug;
+    $extractedJson = $extractedCafeDir . '/data/db.json';
+    if (!is_file($extractedJson)) throw new RuntimeException('db.json در بکاپ یافت نشد');
+    $json = (string)file_get_contents($extractedJson);
+    if (strlen($json) < 10) throw new RuntimeException('محتوای db.json خالی است');
+
+    /* بکاپ خودکار از وضع فعلی */
+    try { plat_backup($slug); } catch (Throwable $e) { /* بی‌صدا */ }
+
+    /* جایگزینی داده */
+    GStore::for($tenantDir)->importJson($json);
+
+    /* بازگردانی uploads */
+    $extractedUploads = $extractedCafeDir . '/uploads';
+    if (is_dir($extractedUploads)) {
+      $destUploads = $tenantDir . '/uploads';
+      if (is_dir($destUploads)) plat_rrmdir($destUploads);
+      @mkdir($destUploads, 0755, true);
+      $it2 = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($extractedUploads, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST);
+      foreach ($it2 as $f2) {
+        $rel2 = ltrim(str_replace([$extractedUploads, '\\'], ['', '/'], (string)$f2), '/');
+        if ($rel2 === '') continue;
+        $dst2 = $destUploads . '/' . $rel2;
+        if ($f2->isDir()) { @mkdir($dst2, 0755, true); }
+        else { @mkdir(dirname($dst2), 0755, true); @copy((string)$f2, $dst2); }
+      }
+    }
+
+    /* بازگردانی license.json */
+    $extractedLicense = $extractedCafeDir . '/data/license.json';
+    if (is_file($extractedLicense)) {
+      @copy($extractedLicense, $tenantDir . '/data/license.json');
+    }
+
+    plat_log('restore_backup', ['slug' => $slug, 'from' => $backupName]);
+    return ['ok' => true, 'slug' => $slug, 'from' => $backupName];
+  } finally {
+    if (is_dir($tmpDir)) plat_rrmdir($tmpDir);
+  }
+}
+/* ═══ پایان RESTORE_BACKUP_V1 ═══ */
+
 function plat_backup(string $slug): array {
   require_once __DIR__ . '/export-control.php';
   if (!class_exists('ZipArchive')) throw new RuntimeException('افزونهٔ zip روی هاست فعال نیست');

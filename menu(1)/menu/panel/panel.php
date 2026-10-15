@@ -137,6 +137,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          header('Cache-Control: no-store');
                          readfile($bk['path']);
                          exit;
+      /* RESTORE_BACKUP_V1 */
+      case 'restore_backup':
+                       $__bf = (string)($_POST['backup'] ?? '');
+                       $__sg = (string)($_POST['slug'] ?? '');
+                       if ($__bf === '' || $__sg === '') { $msg = 'پارامتر ناقص'; break; }
+                       try {
+                         $__r = plat_restore_backup($__sg, $__bf);
+                         $ok = "بازگردانی موفق: کافه «{$__sg}» از بکاپ «{$__bf}»";   /* FIX_GUILLEMET_V1 */
+                       } catch (Throwable $e) {
+                         $msg = 'خطا در بازگردانی: ' . $e->getMessage();
+                       }
+                       break;
       case 'restore':    plat_restore($_POST['tname'] ?? '');
                          $ok = 'کافه از سطل زباله بازیابی شد'; break;
       case 'trashdel':   plat_trash_delete_one($_POST['tname'] ?? '');
@@ -590,6 +602,25 @@ function plat_ev_fa(string $ev): string {
               <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
               <input type="hidden" name="act" value="backupdl"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
               <button class="btn2">📦 پشتیبان</button></form>
+            <?php /* RESTORE_BTN_V1 */
+              $__restoreBackups = array_filter(bak_list(), function($b) use ($x) {
+                return $b['slug'] === $x['slug'];
+              });
+            ?>
+            <?php if (!empty($__restoreBackups)): ?>
+            <form method="post" class="inline" onsubmit="return confirm('از بکاپ انتخاب‌شده بازگردانی شود؟ داده‌های فعلی جایگزین می‌شوند و یک بکاپ خودکار قبل از آن گرفته می‌شود.')">
+              <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+              <input type="hidden" name="act" value="restore_backup">
+              <input type="hidden" name="slug" value="<?= $x['slug'] ?>">
+              <select name="backup" style="padding:5px 8px;font-family:inherit;font-size:12px;border-radius:6px;border:1px solid #DFD2B6;background:#fff;max-width:180px">
+                <?php foreach (array_slice($__restoreBackups, 0, 10) as $__b): ?>
+                  <option value="<?= htmlspecialchars($__b['name']) ?>"><?= htmlspecialchars(bak_human_ago($__b['ts'])) ?> — <?= htmlspecialchars(bak_human_size($__b['size'])) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn2" style="background:#8B7355;color:#fff;border-color:#8B7355;font-size:12px;padding:5px 10px">♻️ بازگردانی</button>
+            </form>
+            <?php endif; ?>
+
             <form method="post" class="inline" onsubmit="return confirm('حذف <?= htmlspecialchars($x['name']) ?>؟ (به سطل زباله می‌رود، <?= $cfg['limits']['grace_days'] ?> روز قابل بازگشت)')">
               <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
               <input type="hidden" name="act" value="delete"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
