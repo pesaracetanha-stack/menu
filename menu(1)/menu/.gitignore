@@ -7,3 +7,11 @@ data/backups/
 # Temporary
 *.tmp
 *.log
+
+data/exports/
+data/backup-state.json
+data/export-requests.json
+data/tickets.json
+data/announcements.json
+data/ticket-files/
+data/announcement-images/
