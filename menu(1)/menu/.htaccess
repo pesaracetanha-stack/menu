@@ -1,0 +1,21 @@
+﻿# GitiArts - htaccess ریشه
+Options -Indexes
+
+# محافظت از فایل‌های حساس
+<FilesMatch "(^[.]env|composer[.](json|lock)|config[.]php|setup[.]php|[.]bak|.*[.]sqlite|[.]log|[.]lock)$">
+  Require all denied
+</FilesMatch>
+
+# محافظت از پوشه‌ها
+RewriteEngine On
+RewriteRule ^data/ - [F,L]
+RewriteRule ^storage/ - [F,L]
+RewriteRule ^tenants/[^/]+/data/ - [F,L]
+
+# امنیت هدرها
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always unset X-Powered-By
+</IfModule>

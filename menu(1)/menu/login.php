@@ -189,11 +189,35 @@ if ($act === 'login') {
 .cbtn.back{justify-content:center;background:#f4f4f4;color:#555;border-color:#e2e2e2;font-weight:700}
 .cbtn.back:hover{background:#ececec}
 </style>
+
+<style>
+/* LOGIN_POLISH_V1 */
+body{background:radial-gradient(circle at 20% 10%, rgba(180,83,31,.05) 0%, transparent 50%),
+              radial-gradient(circle at 80% 90%, rgba(74,111,165,.05) 0%, transparent 50%),
+              #EFE7D6 !important;min-height:100dvh}
+.reg-card{box-shadow:0 8px 30px rgba(139,115,85,.12) !important;transition:box-shadow .2s}
+.reg-card:hover{box-shadow:0 12px 40px rgba(139,115,85,.18) !important}
+</style>
 </head>
 <body>
-<div class="reg" style="max-width:420px;margin:50px auto">
-  <div class="reg-card">
-    <div style="font-weight:900;font-size:18px;color:var(--acc);margin-bottom:14px">🌿 GitiArts — ورود به کافه</div>
+<!-- LOGIN_POLISH_V1 -->
+<div style="text-align:center;margin:20px 0 8px">
+  <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink2,#7D6C54);font-size:13px;font-weight:700;padding:6px 14px;border-radius:20px;background:rgba(180,83,31,.08)">
+    ‹ بازگشت به صفحه اصلی
+  </a>
+</div>
+
+<div class="reg" style="max-width:420px;margin:20px auto 50px">
+  <div class="reg-card" style="position:relative;overflow:hidden">
+    <!-- Brand Header -->
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="font-size:42px;line-height:1;margin-bottom:8px">🌿</div>
+      <div style="font-size:22px;font-weight:900;color:var(--acc,#B4531F);letter-spacing:.5px">GitiArts</div>
+      <div style="font-size:13px;color:var(--ink2,#7D6C54);margin-top:4px">ورود به پنل کافه</div>
+      <div style="display:inline-block;margin-top:10px;padding:3px 12px;background:#E8F4E3;color:#3D6F2B;border-radius:20px;font-size:11px;font-weight:800">✨ ۱۴ روز رایگان</div>
+    </div>
+
+    <div style="height:1px;background:linear-gradient(90deg,transparent,#DFD2B6,transparent);margin-bottom:20px"></div>
     <form id="lf" novalidate>
       <label id="row-num">نام کاربری <span style="font-weight:600;color:var(--ink3)">(شمارهٔ موبایل)</span>
         <input type="text" id="f-num" dir="ltr" inputmode="numeric" placeholder="09121234567" required autocomplete="username"></label>
