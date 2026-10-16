@@ -1,13 +1,38 @@
-﻿# Rate limiting data
-data/rate-limits/
+# GitiArts - Git Ignore
+
+# Secret files
+.env
+.env.*
+!.env.example
+
+# Runtime data
+data/
+!data/.gitkeep
+storage/
+!storage/.gitkeep
+
+# Tenants (customer data)
+tenants/*
+!tenants/_template
+tenants/_template/data/
 
 # Backups
-data/backups/
+*.bak
+*.bak-*
+*.backup
 
-# Temporary
-*.tmp
+# Dependencies
+/vendor/
+/node_modules/
+
+# Test artifacts
+/.phpunit.cache/
+/.phpunit.result.cache
+/phpunit.xml
+/test-report.json
+
+# Logs and state
 *.log
-
 data/exports/
 data/backup-state.json
 data/export-requests.json
@@ -15,3 +40,20 @@ data/tickets.json
 data/announcements.json
 data/ticket-files/
 data/announcement-images/
+data/platform.json
+data/audit.json
+data/installed.lock
+data/trash/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Build
+*.zip
+!updates/packages/*.zip
