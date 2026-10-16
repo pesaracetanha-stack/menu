@@ -191,6 +191,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
  $reqs = xc_load()['reqs'];
  $aud  = xc_audit_tail(60);
  $stats = plat_stats();
+/* TICKETS_BADGE_V1 */
+$__tkFile = __DIR__ . '/../data/tickets.json';
+$__tkOpen = 0;
+if (is_file($__tkFile)) {
+  $__tkData = json_decode((string)@file_get_contents($__tkFile), true);
+  if (is_array($__tkData) && isset($__tkData['tickets'])) {
+    foreach ($__tkData['tickets'] as $__t) {
+      if (($__t['status'] ?? '') === 'open') $__tkOpen++;
+    }
+  }
+}
  $trash = plat_trash_list();
  $totalMb = $stats['total_mb'];
  $setupStill = (string)($cfg['setup_key'] ?? '') !== '';
@@ -237,6 +248,21 @@ function plat_ev_fa(string $ev): string {
       <p class="tmp">🔐 رمز موقت کافه‌دار: <b dir="ltr"><?= htmlspecialchars($tmpPass) ?></b>
       <small>— همین را به مشتری بده؛ بعد از ورود بهتر است رمزش را عوض کند</small></p>
     <?php endif; ?>
+    <?php /* TICKETS_BTN_V1 */ ?>
+    <div style="margin:0 0 16px">
+      <a href="tickets.php" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;padding:12px 22px;border-radius:14px;font-size:15px;font-weight:800;transition:all .15s;
+        <?php if ($__tkOpen > 0): ?>background:linear-gradient(135deg,#B4531F 0%,#9A4517 100%);color:#fff;box-shadow:0 4px 12px rgba(180,83,31,.25)<?php else: ?>background:#F2EADA;color:#271D12;border:1px solid #DFD2B6<?php endif; ?>">
+        🎫 تیکت‌های پشتیبانی
+        <?php if ($__tkOpen > 0): ?><span style="background:rgba(255,255,255,.3);padding:3px 10px;border-radius:12px;font-size:12px"><?= pnum($__tkOpen) ?> باز</span><?php endif; ?>
+      </a>
+    </div>
+    <?php /* ANNOUNCEMENTS_BTN_V1 */ ?>
+    <div style="margin:0 0 16px">
+      <a href="announcements.php" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;padding:13px 24px;border-radius:14px;font-size:15px;font-weight:800;background:linear-gradient(135deg,#4A6FA5 0%,#375180 100%);color:#fff;box-shadow:0 4px 12px rgba(74,111,165,.25)">
+        📢 اعلانات
+      </a>
+    </div>
+
     <?php if ($exportLink): ?>
       <p class="tmp">📦 لینک دانلود یک‌بارمصرف (۷۲ ساعت):<br>
       <textarea id="expLink" readonly style="width:100%;box-sizing:border-box;direction:ltr;font-size:11px;padding:8px;border-radius:8px;border:1px solid #CBBB99;height:52px"><?= htmlspecialchars($exportLink) ?></textarea>
