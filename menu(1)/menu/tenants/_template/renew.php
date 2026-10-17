@@ -13,6 +13,11 @@ if (empty($_SESSION['tenant']) || $_SESSION['tenant'] !== $slug) {
   header('Location: ../../login.php'); exit;
 }
 
+/* CSRF_V1 */
+if (empty($_SESSION['csrf'])) {
+  $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+
 $root = dirname(__DIR__, 2);
 require_once $root . '/api/lib/zarinpal.php';
 
@@ -54,7 +59,9 @@ $msg = ''; $err = '';
 $act = (string)($_POST['act'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $act === 'start') {
-  if (!$zpEnabled) {
+  if (!hash_equals($_SESSION['csrf'] ?? '', (string)($_POST['csrf'] ?? ''))) {
+    $err = 'نشست منقضی شده — صفحه را رفرش کنید';
+  } elseif (!$zpEnabled) {
     $err = 'پرداخت آنلاین هنوز فعال نشده — با پشتیبانی تماس بگیرید';
   } else {
     $plan = (string)($_POST['plan'] ?? '');
@@ -212,6 +219,7 @@ body{font-family:Vazirmatn,sans-serif;background:#EFE7D6;color:#271D12;padding:2
       <input type="hidden" name="act" value="start">
       <input type="hidden" name="plan" id="planInput" value="<?= $currentPlan !== 'free' ? $currentPlan : 'basic' ?>">
       <input type="hidden" name="months" id="monthsInput" value="1">
+      <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
 
       <div class="card">
         <h2>۱. پلن مورد نظر</h2>

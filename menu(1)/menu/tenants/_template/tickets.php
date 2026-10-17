@@ -16,21 +16,21 @@ if (empty($_SESSION['tenant']) || $_SESSION['tenant'] !== $slug) {
 }
 
 $user = (string)($_SESSION['tenant_user'] ?? 'کاربر');
+
+/* CSRF_V1 */
+if (empty($_SESSION['csrf'])) {
+  $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
 $root = dirname(__DIR__, 2);
 $tkFile = $root . '/data/tickets.json';
 $filesDir = $root . '/data/ticket-files';
 
-function tk_load(string $f): array {
-  if (!is_file($f)) return ['nextId'=>1, 'tickets'=>[]];
-  $j = json_decode((string)@file_get_contents($f), true);
-  if (!is_array($j)) return ['nextId'=>1, 'tickets'=>[]];
+require_once dirname(__DIR__, 2) . '/api/lib/atomic-json.php';
+
+function tk_dedupe(array $j): array {
   if (!isset($j['tickets'])) $j['tickets'] = [];
   if (!isset($j['nextId'])) $j['nextId'] = 1;
-
-  /* DEDUPE_V1: حذف تیکت‌های تکراری با همان ID */
-  $seen = [];
-  $clean = [];
-  $maxId = 0;
+  $seen = []; $clean = []; $maxId = 0;
   foreach ($j['tickets'] as $t) {
     $id = (int)($t['id'] ?? 0);
     if ($id <= 0) continue;
@@ -42,6 +42,21 @@ function tk_load(string $f): array {
   $j['tickets'] = $clean;
   if ($maxId >= (int)$j['nextId']) $j['nextId'] = $maxId + 1;
   return $j;
+}
+
+function tk_load(string $f): array {
+  if (!is_file($f)) return ['nextId'=>1, 'tickets'=>[]];
+  $j = json_decode((string)@file_get_contents($f), true);
+  if (!is_array($j)) return ['nextId'=>1, 'tickets'=>[]];
+  return tk_dedupe($j);
+}
+
+function tk_update(string $f, callable $fn): array {
+  return ajl_update($f, function(array $d) use ($fn) {
+    $d = tk_dedupe($d);
+    $result = $fn($d);
+    return is_array($result) ? $result : $d;
+  });
 }
 function tk_save(string $f, array $d): void {
   $dir = dirname($f);
@@ -205,7 +220,9 @@ $msg = ''; $err = '';
 $act = (string)($_POST['act'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if ($act === 'new') {
+  if (!hash_equals($_SESSION['csrf'] ?? '', (string)($_POST['csrf'] ?? ''))) {
+    $err = 'نشست منقضی شده — صفحه را رفرش کنید';
+  } elseif ($act === 'new') {
     $subject = trim((string)($_POST['subject'] ?? ''));
     $body    = trim((string)($_POST['body'] ?? ''));
     $cat     = (string)($_POST['category'] ?? 'general');
@@ -215,26 +232,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     elseif (mb_strlen($body) > 2000) $err = 'متن حداکثر ۲۰۰۰ حرف';
     else {
       if (!in_array($cat, ['technical','billing','feature','general'], true)) $cat = 'general';
-      $d = tk_load($tkFile);
-      $id = (int)$d['nextId']; $d['nextId']++;
+
+      /* مرحله ۱: تخصیص ID اتمیک */
+      $newId = 0;
+      tk_update($tkFile, function(array $d) use (&$newId) {
+        $newId = (int)($d['nextId'] ?? 1);
+        $d['nextId'] = $newId + 1;
+        return $d;
+      });
 
       /* آپلود فایل */
       $fileData = null;
       if (!empty($_FILES['attach']['name'])) {
-        $fileData = tk_upload($_FILES['attach'], $id);
+        $fileData = tk_upload($_FILES['attach'], $newId);
         if ($fileData === null) $err = 'فایل نامعتبر یا بزرگ‌تر از ۵ مگابایت';
       }
 
-      if ($err === '') {
-        $message = ['from'=>'cafe','author'=>$user,'text'=>$body,'ts'=>time()];
-        if ($fileData) $message['file'] = $fileData;
-
-        $d['tickets'][] = [
-          'id'=>$id, 'tid'=>tk_make_id(), 'slug'=>$slug, 'subject'=>$subject, 'category'=>$cat,
-          'status'=>'open', 'created'=>time(), 'updated'=>time(),
-          'messages'=>[$message],
-        ];
-        tk_save($tkFile, $d);
+      if ($err === '' && $newId > 0) {
+        tk_update($tkFile, function(array $d) use ($newId, $slug, $subject, $cat, $user, $body, $fileData) {
+          $message = ['from'=>'cafe','author'=>$user,'text'=>$body,'ts'=>time()];
+          if ($fileData) $message['file'] = $fileData;
+          $d['tickets'][] = [
+            'id'=>$newId, 'tid'=>tk_make_id(), 'slug'=>$slug, 'subject'=>$subject, 'category'=>$cat,
+            'status'=>'open', 'created'=>time(), 'updated'=>time(),
+            'messages'=>[$message],
+          ];
+          return $d;
+        });
         $msg = '✅ تیکت ثبت شد';
       }
     }
@@ -251,33 +275,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($fileData === null) $err = 'فایل نامعتبر';
       }
       if ($err === '') {
-        $d = tk_load($tkFile);
-        foreach ($d['tickets'] as $i => $t) {
-          if ((int)$t['id'] !== $id) continue;
-          if (($t['slug'] ?? '') !== $slug) { $err = 'دسترسی'; break; }
-          if (($t['status'] ?? '') === 'closed') { $err = 'تیکت بسته است'; break; }
-          $m = ['from'=>'cafe','author'=>$user,'text'=>$text,'ts'=>time()];
-          if ($fileData) $m['file'] = $fileData;
-          $d['tickets'][$i]['messages'][] = $m;
-          $d['tickets'][$i]['updated'] = time();
-          $d['tickets'][$i]['status'] = 'open';
-          tk_save($tkFile, $d);
-          $msg = '✅ پاسخ ثبت شد';
-          break;
-        }
+        tk_update($tkFile, function(array $d) use ($id, $slug, $user, $text, $fileData, &$err, &$msg) {
+          foreach ($d['tickets'] as $i => $t) {
+            if ((int)$t['id'] !== $id) continue;
+            if (($t['slug'] ?? '') !== $slug) { $err = 'دسترسی'; return $d; }
+            if (($t['status'] ?? '') === 'closed') { $err = 'تیکت بسته است'; return $d; }
+            $m = ['from'=>'cafe','author'=>$user,'text'=>$text,'ts'=>time()];
+            if ($fileData) $m['file'] = $fileData;
+            $d['tickets'][$i]['messages'][] = $m;
+            $d['tickets'][$i]['updated'] = time();
+            $d['tickets'][$i]['status'] = 'open';
+            $msg = '✅ پاسخ ثبت شد';
+            break;
+          }
+          return $d;
+        });
       }
     }
   } elseif ($act === 'close') {
     $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
-      $d = tk_load($tkFile);
-      foreach ($d['tickets'] as $i => $t) {
-        if ((int)$t['id'] !== $id || ($t['slug'] ?? '') !== $slug) continue;
-        $d['tickets'][$i]['status'] = 'closed';
-        $d['tickets'][$i]['updated'] = time();
-        tk_save($tkFile, $d); $msg = '✅ بسته شد';
-        break;
-      }
+      tk_update($tkFile, function(array $d) use ($id, $slug) {
+        foreach ($d['tickets'] as $i => $t) {
+          if ((int)$t['id'] !== $id || ($t['slug'] ?? '') !== $slug) continue;
+          $d['tickets'][$i]['status'] = 'closed';
+          $d['tickets'][$i]['updated'] = time();
+          break;
+        }
+        return $d;
+      });
+      $msg = '✅ بسته شد';
     }
   }
 }
@@ -313,14 +340,15 @@ foreach (($__allTickets ?? $myTickets) as $t) if ((int)$t['id'] === $activeId) {
 /* CAFE_READ_AT_FIXED */
 if ($active !== null && $activeId > 0) {
   try {
-    $__d = tk_load($tkFile);
-    foreach ($__d['tickets'] as $__i => $__t) {
-      if ((int)$__t['id'] === $activeId && ($__t['slug'] ?? '') === $slug) {
-        $__d['tickets'][$__i]['cafe_read_at'] = time();
-        tk_save($tkFile, $__d);
-        break;
+    tk_update($tkFile, function(array $__d) use ($activeId, $slug) {
+      foreach ($__d['tickets'] as $__i => $__t) {
+        if ((int)$__t['id'] === $activeId && ($__t['slug'] ?? '') === $slug) {
+          $__d['tickets'][$__i]['cafe_read_at'] = time();
+          break;
+        }
       }
-    }
+      return $__d;
+    });
   } catch (Throwable $e) { }
 }
 
@@ -488,6 +516,7 @@ textarea{resize:vertical;min-height:90px}
       <h2>✏️ تیکت جدید</h2>
       <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="act" value="new">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
         <label><span>موضوع</span>
           <input type="text" name="subject" required maxlength="120" placeholder="مثلاً: مشکل در چاپ فاکتور">
         </label>
@@ -541,6 +570,7 @@ textarea{resize:vertical;min-height:90px}
       <?php if ($active['status'] !== 'closed'): ?>
         <form method="post" enctype="multipart/form-data" style="margin-top:14px">
           <input type="hidden" name="act" value="reply">
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
           <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
           <textarea name="text" required maxlength="2000" placeholder="پاسخ خود را بنویسید..."></textarea>
           <label style="margin-top:10px"><span>📎 فایل ضمیمه (اختیاری)</span>
@@ -553,6 +583,7 @@ textarea{resize:vertical;min-height:90px}
         </form>
         <form method="post" style="margin-top:10px" onsubmit="return confirm('تیکت بسته شود؟')">
           <input type="hidden" name="act" value="close">
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
           <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
           <button class="btn ghost" type="submit" style="font-size:12px">✓ بستن تیکت</button>
         </form>

@@ -261,8 +261,14 @@ function cp(b){
 </div>
 <script>
 function dismissAnno(id){
-  fetch('announcements-dismiss.php?id=' + id, {method:'POST', credentials:'same-origin'})
-    .finally(function(){ var p=document.getElementById('anno-popup'); if(p) p.remove(); });
+  var body = new URLSearchParams();
+  body.append('id', id);
+  fetch('announcements-dismiss.php', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: body.toString()
+  }).finally(function(){ var p=document.getElementById('anno-popup'); if(p) p.remove(); });
 }
 </script>
 <?php endif; ?>

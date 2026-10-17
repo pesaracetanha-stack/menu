@@ -13,17 +13,12 @@ pauth_require();
 $root = dirname(__DIR__);
 $tkFile = $root . '/data/tickets.json';
 
-function tk_load(string $f): array {
-  if (!is_file($f)) return ['nextId'=>1, 'tickets'=>[]];
-  $j = json_decode((string)@file_get_contents($f), true);
-  if (!is_array($j)) return ['nextId'=>1, 'tickets'=>[]];
+require_once __DIR__ . '/../api/lib/atomic-json.php';
+
+function tk_dedupe(array $j): array {
   if (!isset($j['tickets'])) $j['tickets'] = [];
   if (!isset($j['nextId'])) $j['nextId'] = 1;
-
-  /* DEDUPE_V1: حذف تیکت‌های تکراری با همان ID */
-  $seen = [];
-  $clean = [];
-  $maxId = 0;
+  $seen = []; $clean = []; $maxId = 0;
   foreach ($j['tickets'] as $t) {
     $id = (int)($t['id'] ?? 0);
     if ($id <= 0) continue;
@@ -35,6 +30,22 @@ function tk_load(string $f): array {
   $j['tickets'] = $clean;
   if ($maxId >= (int)$j['nextId']) $j['nextId'] = $maxId + 1;
   return $j;
+}
+
+function tk_load(string $f): array {
+  if (!is_file($f)) return ['nextId'=>1, 'tickets'=>[]];
+  $j = json_decode((string)@file_get_contents($f), true);
+  if (!is_array($j)) return ['nextId'=>1, 'tickets'=>[]];
+  return tk_dedupe($j);
+}
+
+/* ATOMIC_RMW: read-modify-write با flock */
+function tk_update(string $f, callable $fn): array {
+  return ajl_update($f, function(array $d) use ($fn) {
+    $d = tk_dedupe($d);
+    $result = $fn($d);
+    return is_array($result) ? $result : $d;
+  });
 }
 function tk_save(string $f, array $d): void {
   $dir = dirname($f);
@@ -198,45 +209,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($fileData === null) $err = 'فایل نامعتبر یا بزرگ‌تر از ۵ مگابایت';
       }
       if ($err === '') {
-        $d = tk_load($tkFile);
-        foreach ($d['tickets'] as $i => $t) {
-          if ((int)$t['id'] !== $id) continue;
-          if (($t['status'] ?? '') === 'closed') { $err='بسته است'; break; }
-          $m = ['from'=>'admin','author'=>'پشتیبانی','text'=>$text,'ts'=>time()];
-          if ($fileData) $m['file'] = $fileData;
-          $d['tickets'][$i]['messages'][] = $m;
-          $d['tickets'][$i]['updated'] = time();
-          $d['tickets'][$i]['status'] = 'answered';
-          tk_save($tkFile, $d); $msg = '✅ پاسخ ارسال شد';
-          plat_log('ticket_reply', ['id'=>$id]);
-          break;
-        }
+        tk_update($tkFile, function(array $d) use ($id, $text, $fileData) {
+          foreach ($d['tickets'] as $i => $t) {
+            if ((int)$t['id'] !== $id) continue;
+            if (($t['status'] ?? '') === 'closed') return $d;
+            $m = ['from'=>'admin','author'=>'پشتیبانی','text'=>$text,'ts'=>time()];
+            if ($fileData) $m['file'] = $fileData;
+            $d['tickets'][$i]['messages'][] = $m;
+            $d['tickets'][$i]['updated'] = time();
+            $d['tickets'][$i]['status'] = 'answered';
+            break;
+          }
+          return $d;
+        });
+        $msg = '✅ پاسخ ارسال شد';
+        plat_log('ticket_reply', ['id'=>$id]);
       }
     }
   } elseif ($act === 'close') {
     $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
-      $d = tk_load($tkFile);
-      foreach ($d['tickets'] as $i => $t) {
-        if ((int)$t['id'] !== $id) continue;
-        $d['tickets'][$i]['status'] = 'closed';
-        $d['tickets'][$i]['updated'] = time();
-        tk_save($tkFile, $d); $msg = '✅ بسته شد';
-        plat_log('ticket_close', ['id'=>$id]);
-        break;
-      }
+      tk_update($tkFile, function(array $d) use ($id) {
+        foreach ($d['tickets'] as $i => $t) {
+          if ((int)$t['id'] !== $id) continue;
+          $d['tickets'][$i]['status'] = 'closed';
+          $d['tickets'][$i]['updated'] = time();
+          break;
+        }
+        return $d;
+      });
+      $msg = '✅ بسته شد';
+      plat_log('ticket_close', ['id'=>$id]);
     }
   } elseif ($act === 'reopen') {
     $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
-      $d = tk_load($tkFile);
-      foreach ($d['tickets'] as $i => $t) {
-        if ((int)$t['id'] !== $id) continue;
-        $d['tickets'][$i]['status'] = 'open';
-        $d['tickets'][$i]['updated'] = time();
-        tk_save($tkFile, $d); $msg = '✅ باز شد';
-        break;
-      }
+      tk_update($tkFile, function(array $d) use ($id) {
+        foreach ($d['tickets'] as $i => $t) {
+          if ((int)$t['id'] !== $id) continue;
+          $d['tickets'][$i]['status'] = 'open';
+          $d['tickets'][$i]['updated'] = time();
+          break;
+        }
+        return $d;
+      });
+      $msg = '✅ باز شد';
     }
   }
 }
@@ -284,14 +301,15 @@ foreach ($allTickets as $t) if ((int)$t['id'] === $activeId) { $active = $t; bre
 /* ADMIN_READ_AT_FIXED */
 if ($active !== null && $activeId > 0) {
   try {
-    $__d = tk_load($tkFile);
-    foreach ($__d['tickets'] as $__i => $__t) {
-      if ((int)$__t['id'] === $activeId) {
-        $__d['tickets'][$__i]['admin_read_at'] = time();
-        tk_save($tkFile, $__d);
-        break;
+    tk_update($tkFile, function(array $__d) use ($activeId) {
+      foreach ($__d['tickets'] as $__i => $__t) {
+        if ((int)$__t['id'] === $activeId) {
+          $__d['tickets'][$__i]['admin_read_at'] = time();
+          break;
+        }
       }
-    }
+      return $__d;
+    });
   } catch (Throwable $e) { }
 }
 

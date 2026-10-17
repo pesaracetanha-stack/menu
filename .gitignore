@@ -1,0 +1,99 @@
+# GitiArts Menu Platform — Root .gitignore
+
+# Dependencies (Composer)
+/vendor/
+/menu(1)/menu/vendor/
+/menu(1)/menu/composer.lock
+
+# Build artifacts
+*.zip
+*.zip.*
+/menu(1)/menu/gitiarts-menu-*.zip
+/menu(1)/menu/project_export.json
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+/menu(1)/menu/.env
+/menu(1)/menu/.env.*
+
+# Runtime data (per café)
+/menu(1)/menu/data/
+/menu(1)/menu/storage/
+!/menu(1)/menu/data/.gitkeep
+!/menu(1)/menu/storage/.gitkeep
+
+# Tenant data
+/menu(1)/menu/tenants/_template/data/
+/menu(1)/menu/tenants/_template/uploads/
+/menu(1)/menu/tenants/*/data/
+/menu(1)/menu/tenants/*/uploads/
+
+# Test cafés (dev only)
+/menu(1)/menu/tenants/shadi/
+/menu(1)/menu/tenants/bilak/
+/menu(1)/menu/tenants/bilaki/
+/menu(1)/menu/tenants/blu/
+/menu(1)/menu/tenants/bl*/
+/menu(1)/menu/tenants/test*/
+/menu(1)/menu/tenants/123*/
+
+# Runtime state files
+/menu(1)/menu/data/platform.json
+/menu(1)/menu/data/audit.json
+/menu(1)/menu/data/installed.lock
+/menu(1)/menu/data/tickets.json
+/menu(1)/menu/data/announcements.json
+/menu(1)/menu/data/transactions.json
+/menu(1)/menu/data/backup-state.json
+/menu(1)/menu/data/export-requests.json
+/menu(1)/menu/data/exports/
+/menu(1)/menu/data/ticket-files/
+/menu(1)/menu/data/announcement-images/
+/menu(1)/menu/data/rate-limits/
+/menu(1)/menu/data/trash/
+/menu(1)/menu/data/backups/
+/menu(1)/menu/data/*.sqlite
+/menu(1)/menu/data/*.sqlite-*
+
+# Logs
+*.log
+
+# Backups
+*.bak
+*.bak-*
+*.backup
+
+# Test artifacts
+/.phpunit.cache/
+/.phpunit.result.cache
+/menu(1)/menu/.phpunit.cache/
+/menu(1)/menu/.phpunit.result.cache
+/menu(1)/menu/phpunit.xml
+/menu(1)/menu/test-report.json
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Temp scripts
+/fix-*.php
+/add-*.php
+/make-*.php
+/cleanup-*.php
+/*debug-*.php
+
+# One-time fix scripts
+/cleanup-repo.php
+/fix-*.php
+/menu(1)/menu/fix-*.php
+
+# Runtime/test tenant data
+menu(1)/menu/tenants.json
+menu(1)/menu/tenants/*
