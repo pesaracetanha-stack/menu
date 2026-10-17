@@ -35,7 +35,7 @@ try {
       $j = json_decode($raw, true);
       if (is_array($j['license'] ?? null)) {
         $l = $j['license'];
-        $exp = (int)($l['paid_until'] ?? $j['license']['expires'] ?? 0);
+        $exp = (float)($l['paid_until'] ?? $j['license']['expires'] ?? 0);
         $lic = [
           'status' => (string)($l['status'] ?? 'trial'),
           'plan' => (string)($l['plan'] ?? 'free'),

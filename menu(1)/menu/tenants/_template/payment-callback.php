@@ -71,8 +71,8 @@ try {
     $store->txn(function (array &$db) use ($days, $plan) {
       if (empty($db)) return $db;
       if (!isset($db['license'])) $db['license'] = [];
-      $now = round(microtime(true) * 1000);
-      $currentExpires = (int)($db['license']['paid_until'] ?? $db['license']['expires'] ?? 0);
+      $now = (float)round(microtime(true) * 1000);
+      $currentExpires = (float)($db['license']['paid_until'] ?? $db['license']['expires'] ?? 0);
       $base = max($currentExpires, $now);
       $db['license']['status'] = 'active';
       $db['license']['plan'] = $plan;
