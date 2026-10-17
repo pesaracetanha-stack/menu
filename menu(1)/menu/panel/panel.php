@@ -12,11 +12,11 @@ pauth_require();
 /* BACKUP_DASH_V1 */
 require_once __DIR__ . '/../api/lib/backup.php';
 try { $__bakLazy = bak_lazy_check(); } catch (Throwable $e) { $__bakLazy = null; }
-/* SMS_LAZY_V1: یادآوری انقضا با SMS */
+/* SMS_LAZY_V1 */
 try { $__smsLazy = sms_reminder_run(); } catch (Throwable $e) { $__smsLazy = null; }
 
- $msg = ''; $ok = ''; $tmpPass = ''; $exportLink = '';
- $updRep = null; $updScan = null;
+$msg = ''; $ok = ''; $tmpPass = ''; $exportLink = '';
+$updRep = null; $updScan = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $act = $_POST['act'] ?? '';
   if (!csrf_ok($_POST['csrf'] ?? null)) {
@@ -28,200 +28,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       if ($m === '') { $ok = 'رمز عوض شد'; plat_log('pass_change'); } else $msg = $m; break;
       case 'activate': plat_activate($_POST['slug'] ?? '', max(30, (int)($_POST['days'] ?? 365)));
                        $ok = 'لایسنس فعال شد'; plat_log('activate', ['slug' => $_POST['slug'] ?? '', 'days' => (int)($_POST['days'] ?? 365)]); break;
-      /* PLAN_UI_V1 */
       case 'setplan': plat_set_plan($_POST['slug'] ?? '', $_POST['plan'] ?? 'free');
                     $ok = 'پلن تغییر کرد'; plat_log('setplan', ['slug' => $_POST['slug'] ?? '', 'plan' => $_POST['plan'] ?? '']); break;
       case 'suspend':  plat_suspend($_POST['slug'] ?? ''); $ok = 'کافه غیرفعال شد'; plat_log('suspend', ['slug' => $_POST['slug'] ?? '']); break;
       case 'resetpass': $tmpPass = plat_reset_pass($_POST['slug'] ?? '');
                         $ok = 'رمز موقت مدیر کافه ساخته شد'; plat_log('resetpass', ['slug' => $_POST['slug'] ?? '']); break;
-      /* v5.0.5-test.1: ریست رمز پرسنل (صندوق‌دار / آشپزخانه) */
       case 'resetuser': $tmpPass = plat_reset_user($_POST['slug'] ?? '', $_POST['uid'] ?? '');
-                        $ok = 'رمز موقت پرسنل ساخته شد — «' . htmlspecialchars(plat_user_name($_POST['slug'] ?? '', $_POST['uid'] ?? '')) . '»';
-                        plat_log('resetuser', ['slug' => $_POST['slug'] ?? '', 'uid' => $_POST['uid'] ?? '']);
-                        break;
-      case 'delete':   plat_delete($_POST['slug'] ?? '', ($_POST['final'] ?? '') === '1');
-                       $ok = 'کافه حذف شد'; break;
-      case 'sweep':    $r = plat_sweep_orphans();
-                       $ok = "جاروبرقی: {$r['scanned']} فایل بررسی، {$r['deleted']} حذف، {$r['freed_mb']}MB آزاد شد";
-                       plat_log('sweep', $r); break;
-      case 'trash':    $n = plat_trash_sweep();
-                       $ok = "$n کافهٔ منقضی از سطل زباله پاک شد"; plat_log('trash_sweep', ['n' => $n]); break;
-
-      /* ── v5.0.5-test.4: کنترل کامل کافه‌ها ── */
-      /* EXPIRY_ALERT_V1 */
+                        $ok = 'رمز موقت پرسنل ساخته شد'; plat_log('resetuser', ['slug' => $_POST['slug'] ?? '', 'uid' => $_POST['uid'] ?? '']); break;
+      case 'delete':   plat_delete($_POST['slug'] ?? '', ($_POST['final'] ?? '') === '1'); $ok = 'کافه حذف شد'; break;
+      case 'sweep':    $r = plat_sweep_orphans(); $ok = "جاروبرقی: {$r['deleted']} حذف شد"; plat_log('sweep', $r); break;
+      case 'trash':    $n = plat_trash_sweep(); $ok = "$n کافه‌ی منقضی پاک شد"; plat_log('trash_sweep', ['n' => $n]); break;
       case 'renewexpiring':
-                       $__days = max(1, (int)($_POST['days'] ?? 30));
-                       $__cnt = 0; $__fail = 0;
+                       $__days = max(1, (int)($_POST['days'] ?? 30)); $__cnt = 0;
                        foreach (plat_list() as $__x) {
-                         $__lic = $__x['lic'] ?? [];
-                         $__s = $__lic['status'] ?? '';
-                         $__d = $__lic['days_left'] ?? null;
-                         $__isExp = ($__s === 'active' && $__d !== null && $__d <= 7)
-                                  || ($__s === 'trial'  && $__d !== null && $__d <= 7);  /* FIX_THRESHOLD_V1 */
-                         if (!$__isExp) continue;
-                         try { plat_renew((string)$__x['slug'], $__days); $__cnt++; }
-                         catch (Throwable $e) { $__fail++; }
+                         $__lic = $__x['lic'] ?? []; $__s = $__lic['status'] ?? ''; $__d = $__lic['days_left'] ?? null;
+                         if (($__s === 'active' || $__s === 'trial') && $__d !== null && $__d <= 7) {
+                           try { plat_renew((string)$__x['slug'], $__days); $__cnt++; } catch (Throwable $e) {}
+                         }
                        }
-                       $ok = "تمدید گروهی: $__cnt کافه" . ($__fail > 0 ? " ($__fail ناموفق)" : '');
-                       plat_log('renewexpiring', ['ok' => $__cnt, 'fail' => $__fail, 'days' => $__days]);
-                       break;
-      case 'renew':      plat_renew($_POST['slug'] ?? '', (int)($_POST['days'] ?? 365));
-                         $ok = 'لایسنس تمدید شد'; break;
-      case 'extendtrial': plat_extend_trial($_POST['slug'] ?? '', (int)($_POST['days'] ?? 14));
-                         $ok = 'دورهٔ آزمایشی تمدید شد'; break;
-      case 'rename':     plat_rename($_POST['slug'] ?? '', (string)($_POST['name'] ?? ''));
-                         $ok = 'نام کافه عوض شد'; break;
-      /* BACKUP_ALL_V1 */
-      /* DOWNLOAD_ALL_V1 */
-      /* DOWNLOADBACKUP_V1 */
+                       $ok = "تمدید گروهی: $__cnt کافه"; plat_log('renewexpiring', ['ok' => $__cnt]); break;
+      case 'renew':      plat_renew($_POST['slug'] ?? '', (int)($_POST['days'] ?? 365)); $ok = 'لایسنس تمدید شد'; break;
+      case 'extendtrial': plat_extend_trial($_POST['slug'] ?? '', (int)($_POST['days'] ?? 14)); $ok = 'دوره آزمایشی تمدید شد'; break;
+      case 'rename':     plat_rename($_POST['slug'] ?? '', (string)($_POST['name'] ?? '')); $ok = 'نام کافه عوض شد'; break;
       case 'downloadbackup':
                        $__name = basename((string)($_POST['file'] ?? ''));
-                       if (!preg_match('/^[a-zA-Z0-9_\-]+\.zip$/', $__name)) {
-                         $msg = 'نام فایل نامعتبر';
-                         break;
-                       }
-                       $__path = __DIR__ . '/../data/exports/' . $__name;
-                       if (!is_file($__path)) {
-                         $msg = 'فایل یافت نشد';
-                         break;
-                       }
-                       plat_log('downloadbackup', ['file' => $__name]);
-                       header('Content-Type: application/zip');
-                       header('Content-Disposition: attachment; filename="' . $__name . '"');
-                       header('Content-Length: ' . (string)filesize($__path));
-                       readfile($__path);
-                       exit;
+                       if (preg_match('/^[a-zA-Z0-9_\-]+\.zip$/', $__name)) {
+                         $__path = __DIR__ . '/../data/exports/' . $__name;
+                         if (is_file($__path)) {
+                           plat_log('downloadbackup', ['file' => $__name]);
+                           header('Content-Type: application/zip');
+                           header('Content-Disposition: attachment; filename="' . $__name . '"');
+                           header('Content-Length: ' . (string)filesize($__path)); readfile($__path); exit;
+                         }
+                       } $msg = 'فایل یافت نشد'; break;
       case 'downloadall':
-                       require_once __DIR__ . '/../api/lib/platform-admin.php';
-                       $__backupRoot = __DIR__ . '/../data/exports';   /* FIX_DL_PATH_V1 */
-                       if (!is_dir($__backupRoot)) {
-                         $msg = 'پوشه بکاپ خالی است — اول یک بکاپ بگیرید';
-                         break;
-                       }
-                       $__zips = glob($__backupRoot . '/*.zip') ?: [];
-                       if (empty($__zips)) {
-                         $msg = 'هیچ بکاپی یافت نشد — اول بکاپ بگیرید';
-                         break;
-                       }
-                       $__out = $__backupRoot . '/all-backups-' . date('Ymd-His') . '.zip';
-                       $__zip = new ZipArchive();
-                       if ($__zip->open($__out, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-                         $msg = 'ساخت فایل زیپ ممکن نشد';
-                         break;
-                       }
-                       foreach ($__zips as $__f) {
-                         $__zip->addFile($__f, basename($__f));
-                       }
-                       $__zip->addFromString('README.txt', "GitiArts Backups\nGenerated: " . date('Y-m-d H:i:s') . "\nTotal backups: " . count($__zips) . "\n");
-                       $__zip->close();
-                       plat_log('downloadall', ['count' => count($__zips), 'file' => basename($__out)]);
-                       header('Content-Type: application/zip');
-                       header('Content-Disposition: attachment; filename="' . basename($__out) . '"');
-                       header('Content-Length: ' . (string)filesize($__out));
-                       readfile($__out);
-                       @unlink($__out);
-                       exit;
+                       $__backupRoot = __DIR__ . '/../data/exports';
+                       $__zips = is_dir($__backupRoot) ? glob($__backupRoot . '/*.zip') : [];
+                       if (!empty($__zips)) {
+                         $__out = $__backupRoot . '/all-backups-' . date('Ymd-His') . '.zip';
+                         $__zip = new ZipArchive();
+                         if ($__zip->open($__out, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+                           foreach ($__zips as $__f) $__zip->addFile($__f, basename($__f));
+                           $__zip->close();
+                           header('Content-Type: application/zip');
+                           header('Content-Disposition: attachment; filename="' . basename($__out) . '"');
+                           header('Content-Length: ' . (string)filesize($__out)); readfile($__out); @unlink($__out); exit;
+                         }
+                       } $msg = 'هیچ بکاپی یافت نشد'; break;
       case 'backupall':
-                       $__cnt = 0; $__fail = 0;
-                       foreach (plat_list() as $__t) {
-                         try { plat_backup((string)$__t['slug']); $__cnt++; }
-                         catch (Throwable $e) { $__fail++; }
-                       }
-                       $ok = "بکاپ $__cnt کافه گرفته شد" . ($__fail > 0 ? " ($__fail ناموفق)" : '');
-                       plat_log('backupall', ['ok' => $__cnt, 'fail' => $__fail]);
-                       break;
+                       $__cnt = 0; foreach (plat_list() as $__t) { try { plat_backup((string)$__t['slug']); $__cnt++; } catch (Throwable $e) {} }
+                       $ok = "بکاپ $__cnt کافه گرفته شد"; plat_log('backupall', ['ok' => $__cnt]); break;
       case 'backupdl':   $bk = plat_backup($_POST['slug'] ?? '');
                          header('Content-Type: application/zip');
                          header('Content-Disposition: attachment; filename="gitiarts-backup-' . basename($bk['path']) . '"');
-                         header('Content-Length: ' . (string)filesize($bk['path']));
-                         header('Cache-Control: no-store');
-                         readfile($bk['path']);
-                         exit;
-      /* RESTORE_BACKUP_V1 */
+                         header('Content-Length: ' . (string)filesize($bk['path'])); readfile($bk['path']); exit;
       case 'restore_backup':
-                       $__bf = (string)($_POST['backup'] ?? '');
-                       $__sg = (string)($_POST['slug'] ?? '');
-                       if ($__bf === '' || $__sg === '') { $msg = 'پارامتر ناقص'; break; }
-                       try {
-                         $__r = plat_restore_backup($__sg, $__bf);
-                         $ok = "بازگردانی موفق: کافه «{$__sg}» از بکاپ «{$__bf}»";   /* FIX_GUILLEMET_V1 */
-                       } catch (Throwable $e) {
-                         $msg = 'خطا در بازگردانی: ' . $e->getMessage();
-                       }
-                       break;
-      case 'restore':    plat_restore($_POST['tname'] ?? '');
-                         $ok = 'کافه از سطل زباله بازیابی شد'; break;
-      case 'trashdel':   plat_trash_delete_one($_POST['tname'] ?? '');
-                         $ok = 'حذف قطعی انجام شد'; break;
-
-      /* ── درخواست‌های فایل مستقل ── */
+                       $__bf = (string)($_POST['backup'] ?? ''); $__sg = (string)($_POST['slug'] ?? '');
+                       try { $__r = plat_restore_backup($__sg, $__bf); $ok = "بازگردانی موفق: کافه «{$__sg}»"; } catch (Throwable $e) { $msg = 'خطا: ' . $e->getMessage(); } break;
+      case 'restore':    plat_restore($_POST['tname'] ?? ''); $ok = 'کافه بازیابی شد'; break;
+      case 'trashdel':   plat_trash_delete_one($_POST['tname'] ?? ''); $ok = 'حذف قطعی انجام شد'; break;
       case 'approve_export':
         $tok = xc_approve((int)($_POST['id'] ?? 0), (string)($_POST['slug'] ?? ''));
         $sch = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $exportLink = $sch . '://' . ($_SERVER['HTTP_HOST'] ?? '')
-                    . rtrim(str_replace('\\','/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/')
-                    . '/export-download.php?t=' . $tok;
-        $ok = 'لینک یک‌بارمصرف (۷۲ ساعته) ساخته شد — فقط برای مشتری بفرست';
-        break;
-      case 'deny_export':
-        xc_deny((int)($_POST['id'] ?? 0), (string)($_POST['slug'] ?? ''));
-        $ok = 'درخواست رد شد'; break;
-
-      /* ── آپدیتر پنل ── */
-      case 'update_scan':
-        $updScan = upd_scan();
-        $ok = 'اسکن سلامت انجام شد';
-        break;
+        $exportLink = $sch . '://' . ($_SERVER['HTTP_HOST'] ?? '') . rtrim(str_replace('\\','/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/') . '/export-download.php?t=' . $tok;
+        $ok = 'لینک یک‌بارمصرف ساخته شد'; break;
+      case 'deny_export': xc_deny((int)($_POST['id'] ?? 0), (string)($_POST['slug'] ?? '')); $ok = 'درخواست رد شد'; break;
+      case 'update_scan': $updScan = upd_scan(); $ok = 'اسکن انجام شد'; break;
       case 'update_apply':
         $f = $_FILES['upzip'] ?? null;
-        if (!$f || ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK)
-          throw new RuntimeException('فایل آپدیت دریافت نشد — حجم زیپ باید زیر سقف آپلود هاست باشد');
-        if ((int)$f['size'] > 48 * 1024 * 1024)
-          throw new RuntimeException('فایل آپدیت بزرگ‌تر از ۴۸ مگابایت است');
-        $updRep = upd_apply($f['tmp_name'], ($_POST['force'] ?? '') === '1');
-        plat_log('update_apply', ['version' => (string)($updRep['version'] ?? ''), 'applied' => (int)($updRep['applied'] ?? 0)]);
-        $ok = "آپدیت نسخهٔ {$updRep['version']} نصب شد ({$updRep['applied']} فایل) — پشتیبان گرفته شد";
-        break;
+        if ($f && ($f['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+          $updRep = upd_apply($f['tmp_name'], ($_POST['force'] ?? '') === '1');
+          plat_log('update_apply', ['version' => (string)($updRep['version'] ?? '')]);
+          $ok = "آپدیت نسخه {$updRep['version']} نصب شد";
+        } else { $msg = 'فایل آپدیت دریافت نشد'; } break;
     }
   } catch (Throwable $e) { $msg = $e->getMessage(); }
 }
 
- $cfg  = p_config();
- $list = plat_list();
- $reqs = xc_load()['reqs'];
- $aud  = xc_audit_tail(60);
- $stats = plat_stats();
-/* TICKETS_BADGE_V1 */
-$__tkFile = __DIR__ . '/../data/tickets.json';
-$__tkOpen = 0;
-if (is_file($__tkFile)) {
-  $__tkData = json_decode((string)@file_get_contents($__tkFile), true);
-  if (is_array($__tkData) && isset($__tkData['tickets'])) {
-    foreach ($__tkData['tickets'] as $__t) {
-      if (($__t['status'] ?? '') === 'open') $__tkOpen++;
-    }
-  }
-}
- $trash = plat_trash_list();
- $totalMb = $stats['total_mb'];
- $setupStill = (string)($cfg['setup_key'] ?? '') !== '';
- $names = []; foreach ($list as $x) $names[$x['slug']] = $x['name'];
- try { $updVer = upd_current_version(); } catch (Throwable $e) { $updVer = '?'; }
- $updCfgVer = upd_config_version();
- $updMan    = upd_manifest();
- $updLogs   = upd_log_load();
- $updBks    = glob(p_root() . '/data/backups/*.zip') ?: [];
- usort($updBks, fn($a, $b) => filemtime($b) <=> filemtime($a));
- $updBk     = $updBks[0] ?? null;
+$cfg  = p_config();
+$list = plat_list();
+$reqs = xc_load()['reqs'];
+$aud  = xc_audit_tail(60);
+$stats = plat_stats();
+$trash = plat_trash_list();
+$totalMb = $stats['total_mb'];
+$names = []; foreach ($list as $x) $names[$x['slug']] = $x['name'];
+try { $updVer = upd_current_version(); } catch (Throwable $e) { $updVer = '?'; }
+$updLogs = upd_log_load();
+$__bak = bak_status();
 
-/* برچسب فارسی رویدادهای لاگ */
+$currentView = $_GET['view'] ?? 'dashboard';
+
 function plat_ev_fa(string $ev): string {
   static $m = [
     'plat.activate'=>'فعال‌سازی لایسنس','plat.suspend'=>'تعلیق کافه','plat.rename'=>'تغییر نام کافه',
-    'plat.extend_trial'=>'تمدید دورهٔ آزمایشی','plat.renew'=>'تمدید لایسنس','plat.resetpass'=>'ریست رمز مدیر کافه',
+    'plat.extend_trial'=>'تمدید دوره آزمایشی','plat.renew'=>'تمدید لایسنس','plat.resetpass'=>'ریست رمز مدیر کافه',
     'plat.resetuser'=>'ریست رمز پرسنل','plat.delete'=>'حذف کافه (به سطل)','plat.restore'=>'بازیابی از سطل زباله',
     'plat.trash_delete'=>'حذف قطعی از سطل','plat.backup'=>'پشتیبان‌گیری کافه','plat.sweep'=>'جارو رسانه‌های یتیم',
-    'plat.trash_sweep'=>'پاک‌سازی سطل منقضی','plat.setup'=>'راه‌اندازی اولیهٔ پنل','plat.login'=>'ورود موفق',
+    'plat.trash_sweep'=>'پاک‌سازی سطل منقضی','plat.setup'=>'راه‌اندازی اولیه پنل','plat.login'=>'ورود موفق',
     'plat.login_fail'=>'تلاش ناموفق ورود','plat.logout'=>'خروج از پنل','plat.pass_change'=>'تغییر رمز مدیر',
     'plat.update_apply'=>'نصب آپدیت','request'=>'درخواست فایل نصبی','approve'=>'تأیید درخواست',
     'deny'=>'رد درخواست','export-used'=>'دانلود بسته',
@@ -234,562 +138,302 @@ function plat_ev_fa(string $ev): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>پنل GitiArts — مدیریت پلتفرم</title>
-<link rel="stylesheet" href="platform.css">
+<title>پنل مدیریت — GitiArts</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<style>
+/* ── پالت رنگی اختصاصی شما (کرم / قهوه‌ای / نارنجی) ── */
+:root {
+  --bg-canvas: #EFE7D6;
+  --bg-surface: #FBF6EB;
+  --bg-surface-hover: #F2EADA;
+  --bg-sidebar: #271D12;
+  --border-subtle: #DFD2B6;
+  --text-primary: #271D12;
+  --text-secondary: #7D6C54;
+  --text-inverse: #FBF6EB;
+  --accent-500: #B4531F;
+  --accent-600: #9A4517;
+  --success-500: #4F7A3D;
+  --warning-500: #B4801F;
+  --danger-500: #A93B2A;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 3px rgba(39, 29, 18, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(39, 29, 18, 0.08);
+  --font-family: 'Vazirmatn', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-family); background: var(--bg-canvas); color: var(--text-primary); display: flex; min-height: 100vh; line-height: 1.6; }
+
+/* ── Layout ── */
+.app-layout { display: flex; width: 100%; }
+.main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar { height: 64px; background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+.content-area { padding: 24px; flex: 1; overflow-y: auto; }
+
+/* ── Sidebar ── */
+.sidebar { width: 260px; background: var(--bg-sidebar); color: var(--text-inverse); display: flex; flex-direction: column; flex-shrink: 0; }
+.brand { padding: 24px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--bg-surface); }
+.nav-menu { list-style: none; padding: 16px 0; flex: 1; }
+.nav-item { padding: 12px 24px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s; color: #CBBB99; font-weight: 500; text-decoration: none; position: relative; }
+.nav-item:hover { background: rgba(255,255,255,0.05); color: var(--bg-surface); }
+.nav-item.active { background: var(--accent-500); color: white; border-right: 4px solid #E59A6B; }
+.nav-item .icon { font-size: 18px; }
+.nav-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 16px 24px; }
+.badge { background: var(--danger-500); color: white; font-size: 11px; font-weight: bold; padding: 2px 8px; border-radius: 50px; margin-right: auto; }
+.sidebar-footer { padding: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+
+/* ── Topbar ── */
+.page-title { font-size: 18px; font-weight: 700; }
+.topbar-actions { display: flex; gap: 12px; align-items: center; }
+.user-badge { background: var(--bg-canvas); padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; border: 1px solid var(--border-subtle); }
+
+/* ── Views (Tabs) ── */
+.view { display: none; animation: fadeIn 0.3s ease; }
+.view.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Components ── */
+.card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 24px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle); }
+.card-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-box { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 20px; text-align: center; box-shadow: var(--shadow-sm); }
+.stat-box .value { font-size: 28px; font-weight: 800; color: var(--accent-500); margin-bottom: 4px; }
+.stat-box .label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+.stat-box.hot .value { color: var(--danger-500); }
+
+/* ── Alerts ── */
+.alert { padding: 16px; border-radius: var(--radius-md); margin-bottom: 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.alert.ok { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.alert.err { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.alert.warn { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+
+/* ── Buttons ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: var(--radius-md); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; text-decoration: none; }
+.btn-primary { background: var(--accent-500); color: white; }
+.btn-primary:hover { background: var(--accent-600); }
+.btn-outline { background: transparent; border-color: var(--border-subtle); color: var(--text-primary); }
+.btn-outline:hover { background: var(--bg-surface-hover); }
+.btn-danger { background: #fef2f2; color: var(--danger-500); border-color: #fecaca; }
+.btn-danger:hover { background: var(--danger-500); color: white; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* ── Forms ── */
+.form-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); }
+.form-control { width: 100%; padding: 10px 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; background: var(--bg-surface); color: var(--text-primary); }
+.form-control:focus { border-color: var(--accent-500); box-shadow: 0 0 0 3px rgba(180,83,31,0.1); }
+
+/* ── Tables & Lists ── */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 12px 16px; text-align: right; border-bottom: 1px solid var(--border-subtle); }
+th { background: var(--bg-surface-hover); font-weight: 700; color: var(--text-secondary); }
+tr:last-child td { border-bottom: 0; }
+tr:hover td { background: var(--bg-surface-hover); }
+
+/* ── Cafe Cards ── */
+.cafe-item { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; transition: box-shadow 0.2s; }
+.cafe-item:hover { box-shadow: var(--shadow-md); }
+.cafe-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.cafe-name { font-size: 15px; font-weight: 700; }
+.cafe-meta { display: flex; gap: 16px; font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; flex-wrap: wrap; }
+.cafe-actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed var(--border-subtle); }
+
+/* ── Pills ── */
+.pill { display: inline-flex; padding: 2px 8px; border-radius: 50px; font-size: 11px; font-weight: 700; }
+.pill.ok { background: #ecfdf5; color: #047857; }
+.pill.warn { background: #fffbeb; color: #b45309; }
+.pill.bad { background: #fef2f2; color: #b91c1c; }
+
+/* ── Accordion ── */
+details { border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: 12px; background: var(--bg-surface); }
+summary { padding: 12px 16px; background: var(--bg-surface-hover); cursor: pointer; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+summary::-webkit-details-marker { display: none; }
+details[open] summary { border-bottom: 1px solid var(--border-subtle); }
+.details-body { padding: 16px; }
+
+/* ── Utilities ── */
+.flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.text-muted { color: var(--text-secondary); font-size: 12px; }
+.mt-2 { margin-top: 8px; }
+</style>
 </head>
 <body>
-<div class="wrap wide">
-  <div class="card">
-    <div class="logo">🌿 GitiArts — مدیریت پلتفرم</div>
-    <?php if ($setupStill): ?><p class="warn">🔒 نصب انجام شده — مقدار <b>setup_key</b> را در config.php خالی '' کنید.</p><?php endif; ?>
-    <?php if ($msg): ?><p class="err"><?= htmlspecialchars($msg) ?></p><?php endif; ?>
-    <?php if ($ok): ?><p class="ok"><?= htmlspecialchars($ok) ?></p><?php endif; ?>
-    <?php if ($tmpPass): ?>
-      <p class="tmp">🔐 رمز موقت کافه‌دار: <b dir="ltr"><?= htmlspecialchars($tmpPass) ?></b>
-      <small>— همین را به مشتری بده؛ بعد از ورود بهتر است رمزش را عوض کند</small></p>
-    <?php endif; ?>
-    <?php /* TICKETS_BTN_V1 */ ?>
-    <div style="margin:0 0 16px">
-      <a href="tickets.php" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;padding:12px 22px;border-radius:14px;font-size:15px;font-weight:800;transition:all .15s;
-        <?php if ($__tkOpen > 0): ?>background:linear-gradient(135deg,#B4531F 0%,#9A4517 100%);color:#fff;box-shadow:0 4px 12px rgba(180,83,31,.25)<?php else: ?>background:#F2EADA;color:#271D12;border:1px solid #DFD2B6<?php endif; ?>">
-        🎫 تیکت‌های پشتیبانی
-        <?php if ($__tkOpen > 0): ?><span style="background:rgba(255,255,255,.3);padding:3px 10px;border-radius:12px;font-size:12px"><?= pnum($__tkOpen) ?> باز</span><?php endif; ?>
-      </a>
-    </div>
-    <?php /* ANNOUNCEMENTS_BTN_V1 */ ?>
-    <div style="margin:0 0 16px">
-      <a href="announcements.php" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none;padding:13px 24px;border-radius:14px;font-size:15px;font-weight:800;background:linear-gradient(135deg,#4A6FA5 0%,#375180 100%);color:#fff;box-shadow:0 4px 12px rgba(74,111,165,.25)">
-        📢 اعلانات
-      </a>
-    </div>
 
-    <?php if ($exportLink): ?>
-      <p class="tmp">📦 لینک دانلود یک‌بارمصرف (۷۲ ساعت):<br>
-      <textarea id="expLink" readonly style="width:100%;box-sizing:border-box;direction:ltr;font-size:11px;padding:8px;border-radius:8px;border:1px solid #CBBB99;height:52px"><?= htmlspecialchars($exportLink) ?></textarea>
-      <small><button type="button" class="btn2" onclick="var t=document.getElementById('expLink');t.select();document.execCommand('copy');this.textContent='کپی شد ✓'">📋 کپی لینک</button>
-      — این لینک را فقط برای مشتریِ همین کافه بفرست (تلگرام/پیامک)؛ بعد از یک بار دانلود یا ۷۲ ساعت باطل می‌شود</small></p>
-    <?php endif; ?>
+<div class="app-layout">
+  <!-- منوی کناری مشترک -->
+  <?php require_once __DIR__ . '/sidebar.php'; ?>
 
-    <?php if ($stats['expiring_list']): ?>
-      <div class="warn">⏳ لایسنس‌های رو به انقضا (۷ روز آینده):
-        <?php foreach ($stats['expiring_list'] as $e): ?>
-          <b><?= htmlspecialchars($e['name']) ?></b> (<?= (int)$e['days_left'] ?> روز)<?= $e === end($stats['expiring_list']) ? '' : ' ·' ?>
-        <?php endforeach; ?>
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <header class="topbar">
+      <div class="page-title" id="current-page-title">داشبورد</div>
+      <div class="topbar-actions">
+        <div class="user-badge">مدیر کل</div>
       </div>
-    <?php endif; ?>
+    </header>
 
-        <?php if ($stats['expiring'] > 0): /* FIX_ALERT_POS_V1 */ ?>
-    <div style="background:#FBEAE4;border:2px solid #B4531F;border-radius:14px;padding:16px 20px;margin-bottom:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
-        <div style="flex:1;min-width:220px">
-          <b style="font-size:16px;color:#8A2C12">⚠️ هشدار انقضای نزدیک</b>
-          <p class="mini" style="margin:6px 0 0;color:#8A2C12;line-height:1.7">
-            <b><?= pnum($stats['expiring']) ?></b> کافه تا کمتر از ۷ روز دیگر منقضی می‌شوند.
-            برای جلوگیری از قطع سرویس، همین حالا تمدید کنید.
-          </p>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <form method="post" class="inline" style="margin:0" onsubmit="return confirm('<?= pnum($stats['expiring']) ?> کافه با ۳۰ روز اضافه تمدید شوند؟')">
-            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-            <input type="hidden" name="act" value="renewexpiring">
-            <input type="hidden" name="days" value="30">
-            <button class="btn2" style="background:#B4531F;color:#fff;border-color:#B4531F">🔄 تمدید همه با ۳۰ روز</button>
-          </form>
-          <form method="post" class="inline" style="margin:0" onsubmit="return confirm('<?= pnum($stats['expiring']) ?> کافه با ۹۰ روز تمدید شوند؟')">
-            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-            <input type="hidden" name="act" value="renewexpiring">
-            <input type="hidden" name="days" value="90">
-            <button class="btn2" style="background:#4F7A3D;color:#fff;border-color:#4F7A3D">🔄 تمدید همه با ۹۰ روز</button>
-          </form>
-          <button type="button" class="btn2" onclick="document.querySelector('.chip[data-f=&quot;expiring&quot;]').click();document.getElementById('q').scrollIntoView({behavior:'smooth'})">👁 مشاهده لیست</button>
-        </div>
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <div class="stats">
-      <div class="st"><b><?= $stats['total'] ?></b><span>کافه</span></div>
-      <div class="st"><b><?= $stats['active'] ?></b><span>فعال</span></div>
-      <div class="st"><b><?= $stats['trial'] ?></b><span>آزمایشی</span></div>
-
-<div class="st"><b><?= $stats['suspended'] ?></b><span>معلق</span></div>
-      <div class="st<?= $stats['expiring'] ? ' hot' : '' ?>"><b><?= $stats['expiring'] ?></b><span>نزدیک انقضا</span></div>
-      <div class="st"><b><?= $stats['orders24h'] ?></b><span>سفارش ۲۴ساعت</span></div>
-      <div class="st"><b><?= $stats['orders'] ?></b><span>سفارش کل</span></div>
-      <div class="st"><b><?= $stats['customers'] ?></b><span>مشتری</span></div>
-      <div class="st"><b><?= $stats['items'] ?></b><span>آیتم منو</span></div>
-      <div class="st"><b><?= pnum(round($totalMb, 1)) ?></b><span>MB مصرفی</span></div>
-      <div class="st"><b><?= pnum($cfg['limits']['upload_mb'] * max(1, $stats['total'])) ?></b><span>MB سقف مجموع</span></div>
-    </div>
-
-    <div class="tools">
-      <form method="post"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-        <input type="hidden" name="act" value="sweep">
-        <button class="btn2">🧹 جاروبرقی رسانه‌های یتیم</button></form>
-      <form method="post"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-        <input type="hidden" name="act" value="trash">
-        <button class="btn2">🗑 پاک‌سازی سطل زبالهٔ منقضی</button></form>
-    </div>
-    <div class="sec">
-      <h2>⬆️ بروزرسانی و سلامت</h2>
-      <p class="mini">
-        نسخهٔ نصب‌شده: <b dir="ltr"><?= htmlspecialchars($updVer) ?></b>
-        <?= $updCfgVer !== '' && $updCfgVer !== $updVer ? '<span class="mini">· config: <span dir="ltr">' . htmlspecialchars($updCfgVer) . '</span></span>' : '' ?>
-        <?= !empty($updMan['released']) ? '· انتشار: ' . htmlspecialchars(jdate((string)$updMan['released'], 'Y/m/d')) : '' ?>
-      </p>
-      <?php if (!empty($updMan['notes_fa'])): ?><p class="mini" dir="auto">📝 <?= htmlspecialchars((string)$updMan['notes_fa']) ?></p><?php endif; ?>
-      <?php if ($updBk): ?><p class="mini">💾 آخرین پشتیبان: <span dir="ltr"><?= htmlspecialchars(basename($updBk)) ?></span> (<?= jdate((int)filemtime($updBk), 'm/d H:i') ?> — <?= pnum(round((int)filesize($updBk) / 1048576, 1)) ?> MB)</p><?php endif; ?>
-
-      <form method="post" enctype="multipart/form-data" style="margin:10px 0" onsubmit="return confirm('آپدیت نصب شود؟\nابتدا پشتیبان خودکار گرفته می‌شود و دادهٔ زندهٔ کافه‌ها دست‌نخورده می‌ماند.')">
-        <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-        <input type="hidden" name="act" value="update_apply">
-        <input type="file" name="upzip" accept=".zip" required style="max-width:280px">
-        <button class="btn2">⬆️ نصب آپدیت</button>
-        <small class="mini"> — فایل زیپ آپدیت را از پشتیبانی دریافت و همین‌جا آپلود کنید؛ بدون FTP</small>
-      </form>
-
-      <form method="post" style="margin:6px 0">
-        <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-        <input type="hidden" name="act" value="update_scan">
-        <button class="btn2">🩺 اسکن سلامت فایل‌ها</button>
-        <small class="mini"> — مقایسهٔ فایل‌های هسته با چک‌سام بستهٔ نصب‌شده</small>
-      </form>
-
-      <?php if (is_array($updRep) && $updRep['ok']): ?>
-        <div class="ten" style="margin-top:8px">
-          <div class="ten-h"><b>✅ نتیجهٔ نصب — نسخهٔ <span dir="ltr"><?= htmlspecialchars($updRep['version']) ?></span></b></div>
-          <div class="ten-meta">
-            <span><?= (int)$updRep['applied'] ?> فایل اعمال شد</span>
-            <span><?= count($updRep['skipped']) ?> فایل حفاظت‌شده رد شد</span>
-            <?php if ($updRep['deleted']): ?><span><?= count($updRep['deleted']) ?> فایل زائد حذف شد</span><?php endif; ?>
-            <span>پشتیبان: <span dir="ltr"><?= htmlspecialchars(basename($updRep['backup'])) ?></span></span>
-          </div>
-          <?php if ($updRep['applied_list']): ?><p class="mini" dir="ltr">applied: <?= htmlspecialchars(implode(', ', $updRep['applied_list'])) ?><?= $updRep['applied'] > count($updRep['applied_list']) ? ' …' : '' ?></p><?php endif; ?>
-          <?php if ($updRep['skipped']): ?><p class="mini" dir="ltr">protected: <?= htmlspecialchars(implode(', ', array_keys($updRep['skipped']))) ?></p><?php endif; ?>
-          <?php if ($updRep['deleted']): ?><p class="mini" dir="ltr">removed: <?= htmlspecialchars(implode(', ', $updRep['deleted'])) ?></p><?php endif; ?>
+    <div class="content-area">
+      <?php if ($msg): ?><div class="alert err">⛔ <?= htmlspecialchars($msg) ?></div><?php endif; ?>
+      <?php if ($ok): ?><div class="alert ok">✅ <?= htmlspecialchars($ok) ?></div><?php endif; ?>
+      <?php if ($tmpPass): ?>
+        <div class="alert ok" style="background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8">
+          🔑 رمز موقت: <b dir="ltr" style="font-family:monospace; font-size:16px;"><?= htmlspecialchars($tmpPass) ?></b>
         </div>
       <?php endif; ?>
 
-      <?php if (is_array($updScan)): ?>
-        <div class="ten" style="margin-top:8px">
-          <div class="ten-h">
-            <b>🩺 اسکن سلامت</b>
-            <span class="pill <?= $updScan['healthy'] ? 'ok' : 'warn' ?>"><?= $updScan['healthy'] ? 'همه‌چیز سالم' : 'اختلاف پیدا شد' ?></span>
-          </div>
-          <div class="ten-meta">
-            <span>مبنا: چک‌سام نسخهٔ <span dir="ltr"><?= htmlspecialchars($updScan['version']) ?></span></span>
-            <span><?= (int)$updScan['ok'] ?>/<?= (int)$updScan['total'] ?> فایل سالم</span>
-          </div>
-          <?php if ($updScan['modified']): ?><p class="mini" dir="ltr">modified: <?= htmlspecialchars(implode(', ', array_slice($updScan['modified'], 0, 30))) ?><?= count($updScan['modified']) > 30 ? ' …' : '' ?></p><?php endif; ?>
-          <?php if ($updScan['missing']): ?><p class="mini" dir="ltr">missing: <?= htmlspecialchars(implode(', ', array_slice($updScan['missing'], 0, 30))) ?><?= count($updScan['missing']) > 30 ? ' …' : '' ?></p><?php endif; ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if ($updLogs): ?>
-        <p class="mini">آخرین نصب: <?= jdate((int)$updLogs[0]['ts'], 'm/d H:i') ?> — نسخهٔ <span dir="ltr"><?= htmlspecialchars((string)($updLogs[0]['to'] ?? '?')) ?></span> (<?= (int)($updLogs[0]['applied'] ?? 0) ?> فایل)</p>
-      <?php endif; ?>
-    </div>
-
-    <div class="sec">
-      <h2>📦 درخواست‌های فایل مستقل</h2>
-      <?php if (!$reqs): ?><p class="mini">هیچ درخواستی ثبت نشده.</p><?php endif; ?>
-      <?php foreach (array_reverse($reqs) as $r): $st = $r['status'] ?? ''; ?>
-        <div class="ten">
-          <div class="ten-h">
-            <b>#<?= (int)$r['id'] ?> — <?= htmlspecialchars($names[$r['slug']] ?? $r['slug']) ?>
-              <span class="mini" dir="ltr">/<?= htmlspecialchars($r['slug']) ?></span></b>
-            <?php if ($st==='pending'): ?><span class="pill warn">در انتظار</span>
-            <?php elseif ($st==='approved'): ?><span class="pill ok"><?= !empty($r['used']) ? 'دانلود شده' : 'تأییدشده — لینک فعال' ?></span>
-            <?php elseif ($st==='denied'): ?><span class="pill bad">ردشده</span><?php endif; ?>
-          </div>
-          <div class="ten-meta">
-            <span>تاریخ: <?= jdate((int)($r['ts'] ?? 0), 'Y/m/d H:i') ?></span>
-            <?php if (!empty($r['note'])): ?><span dir="auto">یادداشت مشتری: <?= htmlspecialchars($r['note']) ?></span><?php endif; ?>
-            <?php if ($st==='approved'): ?><span>انقضای لینک: <?= jdate((int)($r['expires'] ?? 0), 'Y/m/d H:i') ?></span><?php endif; ?>
-          </div>
-          <?php if ($st==='pending'): ?>
-          <div class="ten-ops" style="margin-top:6px">
-            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="setplan"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <label class="mini">تغییر پلن:</label>
-              <select name="plan" style="padding:5px 8px;font-family:inherit;font-size:13px;border-radius:6px;border:1px solid #DFD2B6;background:#fff">
-                <?php foreach ($cfg['plans'] as $pk => $pv): ?>
-                  <option value="<?= $pk ?>" <?= $pk === $__pk ? 'selected' : '' ?>><?= htmlspecialchars($pv['name_fa']) ?> — <?= toman($pv['price_toman']) ?></option>
-                <?php endforeach; ?>
-              </select>
-              <button class="btn2">🎯 اعمال</button></form>
-          </div>
-          <div class="ten-ops">
-            <form method="post" class="inline" onsubmit="return confirm('لینک یک‌بارمصرف ۷۲ ساعته ساخته شود؟')">
+      <!-- View: Dashboard -->
+      <section id="view-dashboard" class="view <?= $currentView === 'dashboard' ? 'active' : '' ?>">
+        <?php if ($stats['expiring'] > 0): ?>
+          <div class="alert err flex-between">
+            <div>
+              <b style="display:block">⚠️ هشدار انقضای نزدیک</b>
+              <span class="text-muted" style="color:#991b1b"><?= pnum($stats['expiring']) ?> کافه تا کمتر از ۷ روز دیگر منقضی می‌شوند.</span>
+            </div>
+            <form method="post" style="margin:0">
               <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="approve_export">
-              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-              <input type="hidden" name="slug" value="<?= htmlspecialchars($r['slug']) ?>">
-              <button class="btn2">✅ تأیید و ساخت لینک</button></form>
-            <form method="post" class="inline" onsubmit="return confirm('رد شود؟')">
-              <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="deny_export">
-              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-              <input type="hidden" name="slug" value="<?= htmlspecialchars($r['slug']) ?>">
-              <button class="btn2 red">✖ رد</button></form>
-          </div>
-          <?php endif; ?>
-        </div>
-      <?php endforeach; ?>
-    </div>
-
-    <div class="sec">
-    <div class="sec">
-      <?php $__bak = bak_status(); $__bakRun = $__bakLazy ?? null; ?>
-      <?php if ($__bakRun && !empty($__bakRun['ok'])): ?>
-        <div style="background:#E8F4E3;border:1px solid #BFDCA8;color:#3D6F2B;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px">
-          ✅ بکاپ خودکار اجرا شد — <?= pnum($__bakRun['ok']) ?> کافه (<?= pnum($__bakRun['duration']) ?> ثانیه)
-          <?php if (!empty($__bakRun['cleanup']['deleted'])): ?>
-            · <?= pnum($__bakRun['cleanup']['deleted']) ?> بکاپ قدیمی پاک شد
-          <?php endif; ?>
-        </div>
-      <?php endif; ?>
-
-      <h2 style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-        <span>💾 بکاپ و پایداری</span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <form method="post" class="inline" style="margin:0" onsubmit="return confirm('از همه کافه‌ها بکاپ گرفته شود؟')">
-            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-            <input type="hidden" name="act" value="backupall">
-            <button class="btn2" style="font-size:13px;padding:6px 12px">💾 بکاپ الان</button>
-          </form>
-          <?php if (!empty($__bak['list'])): ?>
-          <form method="post" class="inline" style="margin:0" onsubmit="return confirm('همه بکاپ‌ها در یک فایل زیپ دانلود شود؟')">
-            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-            <input type="hidden" name="act" value="downloadall">
-            <button class="btn2" style="font-size:13px;padding:6px 12px;background:#4F7A3D">📥 دانلود همه</button>
-          </form>
-          <?php endif; ?>
-        </div>
-      </h2>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:14px 0">
-        <div style="background:#F2EADA;border-radius:10px;padding:12px">
-          <div style="font-size:12px;color:#7D6C54">آخرین بکاپ</div>
-          <div style="font-size:16px;font-weight:800;color:#271D12;margin-top:4px"><?= htmlspecialchars($__bak['last_ago']) ?></div>
-        </div>
-        <div style="background:#F2EADA;border-radius:10px;padding:12px">
-          <div style="font-size:12px;color:#7D6C54">بکاپ بعدی</div>
-          <div style="font-size:16px;font-weight:800;color:#271D12;margin-top:4px">
-            <?php $__diff = $__bak['next_run'] - time(); ?>
-            <?php if ($__diff <= 60): ?>تا چند لحظه دیگر
-            <?php elseif ($__diff < 3600): ?>تا <?= pnum((int)($__diff / 60)) ?> دقیقه دیگر
-            <?php else: ?>تا <?= pnum((int)($__diff / 3600)) ?> ساعت دیگر
-            <?php endif; ?>
-          </div>
-        </div>
-        <div style="background:#F2EADA;border-radius:10px;padding:12px">
-          <div style="font-size:12px;color:#7D6C54">تعداد بکاپ‌ها</div>
-          <div style="font-size:16px;font-weight:800;color:#271D12;margin-top:4px"><?= pnum($__bak['count_total']) ?></div>
-        </div>
-        <div style="background:#F2EADA;border-radius:10px;padding:12px">
-          <div style="font-size:12px;color:#7D6C54">حجم کل</div>
-          <div style="font-size:16px;font-weight:800;color:#271D12;margin-top:4px"><?= htmlspecialchars($__bak['size_total_h']) ?></div>
-        </div>
-      </div>
-
-      <p class="mini" style="margin:6px 0 14px">
-        🔁 بکاپ خودکار هر <b><?= pnum($__bak['interval_hours']) ?></b> ساعت یک‌بار اجرا می‌شود.
-        حداکثر <b><?= pnum($__bak['keep_per_cafe']) ?></b> بکاپ آخر هر کافه نگه داشته می‌شود
-        و بکاپ‌های قدیمی‌تر از <b><?= pnum($__bak['max_age_days']) ?></b> روز خودکار حذف می‌شوند.
-      </p>
-
-      <?php if (empty($__bak['list'])): ?>
-        <p class="mini">هنوز هیچ بکاپی گرفته نشده. روی «💾 بکاپ الان» بزنید.</p>
-      <?php else: ?>
-        <div style="max-height:340px;overflow:auto;border:1px solid #DFD2B6;border-radius:10px">
-          <table style="width:100%;border-collapse:collapse;font-size:13px">
-            <thead style="background:#F2EADA;position:sticky;top:0">
-              <tr>
-                <th style="padding:8px;text-align:right">کافه</th>
-                <th style="padding:8px;text-align:right">تاریخ</th>
-                <th style="padding:8px;text-align:right">حجم</th>
-                <th style="padding:8px;text-align:right">دانلود</th>
-              </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($__bak['list'] as $__b): ?>
-              <tr style="border-top:1px solid #EFE7D6">
-                <td style="padding:8px" dir="ltr"><?= htmlspecialchars($__b['slug']) ?></td>
-                <td style="padding:8px"><?= htmlspecialchars(bak_human_ago($__b['ts'])) ?></td>
-                <td style="padding:8px"><?= htmlspecialchars(bak_human_size($__b['size'])) ?></td>
-                <td style="padding:8px">
-                  <form method="post" style="margin:0;display:inline">
-                    <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-                    <input type="hidden" name="act" value="downloadbackup">
-                    <input type="hidden" name="file" value="<?= htmlspecialchars($__b['name']) ?>">
-                    <button class="btn2" style="font-size:12px;padding:4px 10px">📥</button>
-                  </form>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-            </tbody>
-          </table>
-        </div>
-      <?php endif; ?>
-    </div>
-      <h2 style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <span>کافه‌های ثبت‌شده</span>
-        <form method="post" class="inline" onsubmit="return confirm('از همه کافه‌ها بکاپ گرفته شود؟')" style="margin:0">
-          <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-          <input type="hidden" name="act" value="backupall">
-          <button class="btn2" style="font-size:13px;padding:6px 12px">💾 بکاپ همه</button>
-        </form>
-        <form method="post" class="inline" onsubmit="return confirm('همه بکاپ‌های موجود در یک فایل زیپ دانلود شود؟')" style="margin:0">
-          <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-          <input type="hidden" name="act" value="downloadall">
-          <button class="btn2" style="font-size:13px;padding:6px 12px;background:#4F7A3D">📥 دانلود همه</button>
-        </form>
-
-      </h2>
-      <div class="fwrap">
-        <input type="text" id="q" placeholder="🔍 جستجوی نام یا آدرس کافه…" autocomplete="off">
-        <div class="chips">
-          <button type="button" class="chip on" data-f="all">همه</button>
-          <button type="button" class="chip" data-f="active">فعال</button>
-          <button type="button" class="chip" data-f="trial">آزمایشی</button>
-          <button type="button" class="chip" data-f="suspended">معلق</button>
-          <button type="button" class="chip" data-f="expiring">نزدیک انقضا</button>
-        </div>
-      </div>
-      <?php if (!$list): ?><p class="mini">هنوز کافه‌ای ثبت نشده.</p><?php endif; ?>
-      <?php foreach ($list as $x): $lic = $x['lic']; $det = plat_details($x['slug']);
-            $isExp = ($lic['status']==='active' && $lic['days_left']!==null && $lic['days_left']<=7)
-                  || ($lic['status']==='trial'  && $lic['days_left']!==null && $lic['days_left']<=3); ?>
-        <div class="ten" data-cafe="<?= htmlspecialchars(mb_strtolower($x['name'] . ' ' . $x['slug'])) ?>" data-st="<?= htmlspecialchars($lic['status']) ?>" data-exp="<?= $isExp ? '1' : '0' ?>">
-          <div class="ten-h">
-            <b><?= htmlspecialchars($x['name']) ?></b>
-            <span class="pill <?= $x['active'] ? 'ok' : 'bad' ?>"><?= $x['active'] ? 'فعال' : 'غیرفعال' ?></span>
-            <?php if ($det['pending_export']): ?><span class="pill warn">درخواست در انتظار</span><?php endif; ?>
-          </div>
-          <div class="ten-plan" style="margin:6px 0 4px;font-size:13px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-            <?php $__pk = plat_get_plan($x['slug']); $__pc = $cfg['plans'][$__pk] ?? $cfg['plans']['free']; ?>
-            <span>پلن فعلی: <span class="pill" style="background:<?= $__pc['color'] ?>;color:#fff;font-weight:700"><?= htmlspecialchars($__pc['name_fa']) ?></span></span>
-            <span class="mini" style="color:#7D6C54">قیمت ماهانه: <b><?= toman($__pc['price_toman']) ?></b></span>
-            <?php if (!empty($__pc['max_users'])): ?><span class="mini" style="color:#7D6C54">حداکثر پرسنل: <b><?= pnum($__pc['max_users']) ?></b></span><?php endif; ?>
-            <?php if ($__pc['sms_enabled']): ?><span class="mini" style="color:#4F7A3D">📱 پنل پیامکی فعال</span><?php endif; ?>
-          </div>
-          <div class="ten-meta" dir="auto">
-            <span>آدرس: <a href="<?= htmlspecialchars($x['url']) ?>" target="_blank" dir="ltr">/<?= htmlspecialchars($x['slug']) ?>/</a></span>
-            <span><a href="<?= htmlspecialchars($x['url']) ?>hub.php" target="_blank">پنل کافه‌دار ↗</a></span>
-            <span>لایسنس:
-              <?php if ($lic['status']==='trial'): ?>
-                <span class="pill warn">آزمایشی — <?= $lic['days_left'] ?> روز مانده</span>
-              <?php elseif ($lic['status']==='active'): ?>
-                <span class="pill ok">فعال — <?= $lic['days_left'] ?> روز</span>
-              <?php elseif ($lic['status']==='suspended'): ?>
-                <span class="pill bad">معلق</span>
-              <?php else: ?>
-                <span class="pill bad"><?= htmlspecialchars($lic['status']) ?></span>
-              <?php endif; ?>
-            </span>
-            <span>فضا: <b><?= pnum($x['size_mb']) ?></b> MB</span>
-          </div>
-          <div class="ten-meta" dir="auto">
-            <span>🍽 <?= $det['items'] ?> آیتم / <?= $det['cats'] ?> دسته</span>
-            <span>🧾 <?= $det['orders'] ?> سفارش (<?= $det['orders24h'] ?> در ۲۴س)</span>
-            <span>👥 <?= $det['customers'] ?> مشتری</span>
-            <?php if ($det['resv_pending']): ?><span class="pill warn">⏰ <?= $det['resv_pending'] ?> رزرو در انتظار</span><?php endif; ?>
-            <?php if ($det['last_order']): ?><span>آخرین سفارش: <?= jdate((int)($det['last_order'] / 1000), 'm/d H:i') ?></span><?php endif; ?>
-          </div>
-          <div class="ten-ops">
-            <?php if ($lic['status'] !== 'active'): ?>
-            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="activate"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <label class="mini">مدت (روز):</label>
-              <input type="number" name="days" value="365" min="30" max="3650" style="width:70px">
-              <button class="btn2">✅ فعال‌سازی لایسنس</button></form>
-            <?php else: ?>
-            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="renew"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <label class="mini">تمدید (روز):</label>
-              <input type="number" name="days" value="365" min="1" max="3650" style="width:64px">
-              <button class="btn2">🔄 تمدید لایسنس</button></form>
-            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="suspend"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <button class="btn2">⏸ معلق</button></form>
-            <?php endif; ?>
-            <?php if ($lic['status'] === 'trial'): ?>
-            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="extendtrial"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <label class="mini">+آزمایش (روز):</label>
-              <input type="number" name="days" value="14" min="1" max="3650" style="width:56px">
-              <button class="btn2">⏱ تمدید آزمایشی</button></form>
-            <?php endif; ?>
-            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="resetpass"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <button class="btn2">🔑 ریست رمز مدیر</button></form>
-            <form method="post" class="inline" onsubmit="return confirm('پشتیبان کامل «<?= htmlspecialchars($x['name']) ?>» دانلود شود؟ (زیپ قابل‌نصب مستقل)')">
-              <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="backupdl"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <button class="btn2">📦 پشتیبان</button></form>
-            <?php /* RESTORE_BTN_V1 */
-              $__restoreBackups = array_filter(bak_list(), function($b) use ($x) {
-                return $b['slug'] === $x['slug'];
-              });
-            ?>
-            <?php if (!empty($__restoreBackups)): ?>
-            <form method="post" class="inline" onsubmit="return confirm('از بکاپ انتخاب‌شده بازگردانی شود؟ داده‌های فعلی جایگزین می‌شوند و یک بکاپ خودکار قبل از آن گرفته می‌شود.')">
-              <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="restore_backup">
-              <input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <select name="backup" style="padding:5px 8px;font-family:inherit;font-size:12px;border-radius:6px;border:1px solid #DFD2B6;background:#fff;max-width:180px">
-                <?php foreach (array_slice($__restoreBackups, 0, 10) as $__b): ?>
-                  <option value="<?= htmlspecialchars($__b['name']) ?>"><?= htmlspecialchars(bak_human_ago($__b['ts'])) ?> — <?= htmlspecialchars(bak_human_size($__b['size'])) ?></option>
-                <?php endforeach; ?>
-              </select>
-              <button class="btn2" style="background:#8B7355;color:#fff;border-color:#8B7355;font-size:12px;padding:5px 10px">♻️ بازگردانی</button>
+              <input type="hidden" name="act" value="renewexpiring">
+              <input type="hidden" name="days" value="30">
+              <button class="btn btn-danger btn-sm">تمدید ۳۰ روزه</button>
             </form>
-            <?php endif; ?>
+          </div>
+        <?php endif; ?>
 
-            <form method="post" class="inline" onsubmit="return confirm('حذف <?= htmlspecialchars($x['name']) ?>؟ (به سطل زباله می‌رود، <?= $cfg['limits']['grace_days'] ?> روز قابل بازگشت)')">
-              <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="delete"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <input type="hidden" name="final" value="0">
-              <button class="btn2 red">🗑 حذف</button></form>
+        <div class="grid-stats">
+          <div class="stat-box"><div class="value"><?= $stats['total'] ?></div><div class="label">کل کافه‌ها</div></div>
+          <div class="stat-box"><div class="value"><?= $stats['active'] ?></div><div class="label">فعال</div></div>
+          <div class="stat-box"><div class="value"><?= $stats['trial'] ?></div><div class="label">آزمایشی</div></div>
+          <div class="stat-box <?= $stats['expiring'] ? 'hot' : '' ?>"><div class="value"><?= $stats['expiring'] ?></div><div class="label">نزدیک انقضا</div></div>
+          <div class="stat-box"><div class="value"><?= $stats['orders24h'] ?></div><div class="label">سفارش ۲۴ساعت</div></div>
+          <div class="stat-box"><div class="value"><?= pnum(round($totalMb, 1)) ?></div><div class="label">MB مصرفی</div></div>
+        </div>
+      </section>
+
+      <!-- View: Cafes -->
+      <section id="view-cafes" class="view <?= $currentView === 'cafes' ? 'active' : '' ?>">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🏪 مدیریت کافه‌ها</div></div>
+          <div class="form-row" style="margin-bottom:16px">
+            <input type="text" id="q" class="form-control" placeholder="جستجوی نام یا اسلاگ کافه..." style="flex:1; min-width:200px" oninput="cafFilter()">
+            <select id="filter-status" class="form-control" style="width:auto" onchange="cafFilter()">
+              <option value="all">همه وضعیت‌ها</option>
+              <option value="active">فعال</option>
+              <option value="trial">آزمایشی</option>
+            </select>
           </div>
-          <div class="ten-ops" style="margin-top:6px">
-            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="rename"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <label class="mini">✏️ نام:</label>
-              <input type="text" name="name" value="<?= htmlspecialchars($x['name']) ?>" maxlength="60" style="width:150px;padding:5px;border:1px solid #CBBB99;border-radius:8px;font:inherit">
-              <button class="btn2">ثبت نام</button></form>
+          <?php foreach ($list as $x): $lic = $x['lic']; $det = plat_details($x['slug']); ?>
+            <div class="cafe-item" data-cafe="<?= htmlspecialchars(mb_strtolower($x['name'] . ' ' . $x['slug'])) ?>" data-st="<?= htmlspecialchars($lic['status']) ?>">
+              <div class="cafe-header">
+                <div class="cafe-name"><?= htmlspecialchars($x['name']) ?> <span class="pill <?= $x['active'] ? 'ok' : 'bad' ?>"><?= $x['active'] ? 'فعال' : 'غیرفعال' ?></span></div>
+                <div class="text-muted" dir="ltr">/<?= htmlspecialchars($x['slug']) ?></div>
+              </div>
+              <div class="cafe-meta">
+                <span>لایسنس: <?php if ($lic['status']==='active'): ?><span class="pill ok">فعال (<?= $lic['days_left'] ?> روز)</span><?php else: ?><span class="pill warn">آزمایشی (<?= $lic['days_left'] ?> روز)</span><?php endif; ?></span>
+                <span>فضا: <b><?= pnum($x['size_mb']) ?> MB</b></span>
+              </div>
+              <div class="cafe-actions">
+                <form method="post" class="form-row" style="margin:0">
+                  <input type="hidden" name="csrf" value="<?= csrf_token() ?>"><input type="hidden" name="act" value="renew"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
+                  <input type="number" name="days" value="365" class="form-control" style="width:70px; padding:4px 8px">
+                  <button class="btn btn-outline btn-sm">تمدید</button>
+                </form>
+                <form method="post" style="margin:0"><input type="hidden" name="csrf" value="<?= csrf_token() ?>"><input type="hidden" name="act" value="resetpass"><input type="hidden" name="slug" value="<?= $x['slug'] ?>"><button class="btn btn-outline btn-sm">🔑 ریست رمز</button></form>
+                <form method="post" style="margin:0"><input type="hidden" name="csrf" value="<?= csrf_token() ?>"><input type="hidden" name="act" value="backupdl"><input type="hidden" name="slug" value="<?= $x['slug'] ?>"><button class="btn btn-outline btn-sm">📦 بکاپ</button></form>
+                <form method="post" style="margin:0" onsubmit="return confirm('حذف شود؟')"><input type="hidden" name="csrf" value="<?= csrf_token() ?>"><input type="hidden" name="act" value="delete"><input type="hidden" name="slug" value="<?= $x['slug'] ?>"><button class="btn btn-danger btn-sm">حذف</button></form>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </section>
+
+      <!-- View: System -->
+      <section id="view-system" class="view <?= $currentView === 'system' ? 'active' : '' ?>">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🔄 بروزرسانی و سلامت</div></div>
+          <p class="text-muted">نسخه نصب‌شده: <b dir="ltr"><?= htmlspecialchars($updVer) ?></b></p>
+          <div class="form-row mt-2">
+            <form method="post" enctype="multipart/form-data" class="flex-between" style="margin:0; width:100%">
+              <input type="hidden" name="csrf" value="<?= csrf_token() ?>"><input type="hidden" name="act" value="update_apply">
+              <input type="file" name="upzip" accept=".zip" required class="form-control" style="width:200px">
+              <button class="btn btn-primary">نصب آپدیت</button>
+            </form>
+            <form method="post" style="margin:0">
+              <input type="hidden" name="csrf" value="<?= csrf_token() ?>"><input type="hidden" name="act" value="update_scan">
+              <button class="btn btn-outline">🩺 اسکن سلامت</button>
+            </form>
           </div>
-          <div class="ten-ops" style="margin-top:6px"> <!-- PLAN_FORM_FINAL -->
-            <form method="post" class="inline"><input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="setplan"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-              <label class="mini">تغییر پلن:</label>
-              <select name="plan" style="padding:5px 8px;font-family:inherit;font-size:13px;border-radius:6px;border:1px solid #DFD2B6;background:#fff">
-                <?php foreach ($cfg['plans'] as $pk => $pv): ?>
-                  <option value="<?= $pk ?>" <?= $pk === $__pk ? 'selected' : '' ?>><?= htmlspecialchars($pv['name_fa']) ?> — <?= toman($pv['price_toman']) ?></option>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">💾 بکاپ و پایدارسازی</div></div>
+          <?php if (!empty($__bak['list'])): ?>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>کافه</th><th>تاریخ</th><th>حجم</th><th>عملیات</th></tr></thead>
+                <tbody>
+                  <?php foreach ($__bak['list'] as $__b): ?>
+                    <tr>
+                      <td dir="ltr"><?= htmlspecialchars($__b['slug']) ?></td>
+                      <td><?= htmlspecialchars(bak_human_ago($__b['ts'])) ?></td>
+                      <td><?= htmlspecialchars(bak_human_size($__b['size'])) ?></td>
+                      <td>
+                        <form method="post" style="margin:0"><input type="hidden" name="csrf" value="<?= csrf_token() ?>"><input type="hidden" name="act" value="downloadbackup"><input type="hidden" name="file" value="<?= htmlspecialchars($__b['name']) ?>"><button class="btn btn-outline btn-sm">📥</button></form>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php else: ?><p class="text-muted">هنوز بکاپی گرفته نشده.</p><?php endif; ?>
+        </div>
+      </section>
+
+      <!-- View: Security & Logs -->
+      <section id="view-security" class="view <?= $currentView === 'security' ? 'active' : '' ?>">
+        <div class="card" style="max-width:500px">
+          <div class="card-header"><div class="card-title">🔐 تغییر رمز مدیر</div></div>
+          <form method="post">
+            <input type="hidden" name="csrf" value="<?= csrf_token() ?>"><input type="hidden" name="act" value="change">
+            <div class="form-group"><label>رمز فعلی</label><input type="password" name="old" class="form-control" required></div>
+            <div class="form-group"><label>رمز جدید</label><input type="password" name="p1" class="form-control" required></div>
+            <div class="form-group"><label>تکرار رمز جدید</label><input type="password" name="p2" class="form-control" required></div>
+            <button class="btn btn-primary" style="width:100%">ثبت رمز جدید</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">📜 لاگ عملیات</div></div>
+          <div class="table-wrap" style="max-height:400px; overflow-y:auto;">
+            <table>
+              <thead><tr><th>زمان</th><th>رویداد</th></tr></thead>
+              <tbody>
+                <?php foreach ($aud as $a): ?>
+                  <tr><td style="white-space:nowrap"><?= jdate((int)$a['ts'], 'm/d H:i') ?></td><td><b><?= htmlspecialchars(plat_ev_fa((string)$a['ev'])) ?></b></td></tr>
                 <?php endforeach; ?>
-              </select>
-              <button class="btn2">🎯 اعمال</button></form>
-          </div>
-          <?php /* جزئیات کامل + پرسنل */ ?>
-          <details style="margin-top:8px">
-            <summary class="mini" style="cursor:pointer;font-weight:800">📊 جزئیات کافه</summary>
-            <div class="dgrid">
-              <span>نام برند منو: <b><?= htmlspecialchars($det['brand'] ?: '—') ?></b></span>
-              <span>راه‌اندازی ویزارد: <b><?= $det['setup_done'] ? 'انجام شده' : 'هنوز نشده' ?></b></span>
-              <span>تاریخ ثبت: <b><?= $det['created'] ? jdate((int)($det['created'] / 1000), 'Y/m/d') : '—' ?></b></span>
-              <span>پرسنل: <b><?= $det['staff'] ?></b> کاربر</span>
-              <span>رزرو در انتظار تأیید: <b><?= $det['resv_pending'] ?></b></span>
-              <span>حجم کل: <b><?= pnum($x['size_mb']) ?></b> MB از <?= pnum($cfg['limits']['upload_mb']) ?> MB</span>
-            </div>
-          </details>
-          <?php $staff = plat_users($x['slug']); if ($staff): ?>
-          <details style="margin-top:8px">
-            <summary class="mini" style="cursor:pointer;font-weight:800">👷 پرسنل (صندوق / آشپزخانه) — ریست رمز: <?= count($staff) ?> کاربر</summary>
-            <?php foreach ($staff as $su): ?>
-            <div class="mini" style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px dashed #DFD2B6;padding:4px 0">
-              <span>«<?= htmlspecialchars($su['name']) ?>»<?= $su['phone'] ? ' · <span dir="ltr">' . htmlspecialchars($su['phone']) . '</span>' : '' ?><?= $su['haspass'] ? '' : ' · بدون رمز' ?></span>
-              <form method="post" class="inline" onsubmit="return confirm('رمز «<?= htmlspecialchars($su['name']) ?>» ریست شود؟ رمز موقت همین‌جا نشان داده می‌شود.')">
-                <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-                <input type="hidden" name="act" value="resetuser">
-                <input type="hidden" name="slug" value="<?= $x['slug'] ?>">
-                <input type="hidden" name="uid" value="<?= htmlspecialchars($su['id']) ?>">
-                <button class="btn2">🔑 ریست رمز</button></form>
-            </div>
-            <?php endforeach; ?>
-          </details>
-          <?php endif; ?>
-        </div>
-      <?php endforeach; ?>
-    </div>
-
-    <div class="sec">
-      <h2>♻️ سطل زباله (کافه‌های حذف‌شده — <?= $cfg['limits']['grace_days'] ?> روز فرصت بازگشت)</h2>
-      <?php if (!$trash): ?><p class="mini">سطل زباله خالی است.</p><?php endif; ?>
-      <?php foreach ($trash as $t): ?>
-        <div class="ten">
-          <div class="ten-h">
-            <b><?= htmlspecialchars($t['name']) ?> <span class="mini" dir="ltr">/<?= htmlspecialchars($t['slug']) ?></span></b>
-            <?php if ($t['taken']): ?><span class="pill warn">اسلاگ اشغال شده</span>
-            <?php else: ?><span class="pill ok">قابل بازیابی</span><?php endif; ?>
-          </div>
-          <div class="ten-meta">
-            <span>حذف: <?= jdate((int)$t['ts'], 'Y/m/d H:i') ?></span>
-            <span>فضا: <?= pnum($t['size_mb']) ?> MB</span>
-            <span>وضعیت لایسنس هنگام حذف: <?= htmlspecialchars($t['lic']) ?></span>
-          </div>
-          <div class="ten-ops">
-            <?php if (!$t['taken']): ?>
-            <form method="post" class="inline" onsubmit="return confirm('کافه به پلتفرم برگردد؟')">
-              <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="restore">
-              <input type="hidden" name="tname" value="<?= htmlspecialchars($t['tname']) ?>">
-              <button class="btn2">♻️ بازیابی</button></form>
-            <?php endif; ?>
-            <form method="post" class="inline" onsubmit="return confirm('حذف قطعی؟ دیگر هیچ راه بازگشتی نیست!')">
-              <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-              <input type="hidden" name="act" value="trashdel">
-              <input type="hidden" name="tname" value="<?= htmlspecialchars($t['tname']) ?>">
-              <button class="btn2 red">🔥 حذف قطعی</button></form>
+              </tbody>
+            </table>
           </div>
         </div>
-      <?php endforeach; ?>
+      </section>
+
     </div>
-
-    <div class="sec">
-      <h2>📜 لاگ عملیات (۶۰ رویداد آخر)</h2>
-      <?php if (!$aud): ?><p class="mini">لاگی نیست.</p><?php endif; ?>
-      <?php foreach ($aud as $a): ?>
-        <div class="mini" style="border-bottom:1px dashed #DFD2B6;padding:3px 0"><?= jdate((int)$a['ts'], 'm/d H:i') ?> — <?= htmlspecialchars(plat_ev_fa((string)$a['ev'])) ?> <span dir="ltr" class="mini"><?= htmlspecialchars(json_encode($a['d'] ?? [], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)) ?></span></div>
-      <?php endforeach; ?>
-    </div>
-
-    <div class="sec">
-      <h2>تغییر رمز مدیر</h2>
-      <?php /* v5.0.5-test.3: وضعیت ورود دومرحله‌ای (کد یکبارمصرف پیامکی) */ ?>
-      <p class="mini">🔒 ورود دومرحله‌ای (کد پیامکی):
-        <?= pauth_otp_enabled()
-            ? '<span class="pill ok">فعال — ارسال به <span dir="ltr">' . htmlspecialchars(pauth_otp_mobile_masked()) . '</span></span>'
-            : '<span class="pill warn">غیرفعال</span> — برای فعال‌سازی «security.admin_mobile» و کلید پیامک را در config.php پر کنید' ?>
-      </p>
-      <form method="post">
-        <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-        <input type="hidden" name="act" value="change">
-        <label>رمز فعلی<input type="password" name="old" required></label>
-        <label>رمز جدید<input type="password" name="p1" required></label>
-        <label>تکرار رمز جدید<input type="password" name="p2" required></label>
-        <button class="btn2">ثبت رمز جدید</button>
-      </form>
-    </div>
-
-    <form method="post">
-      <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-      <input type="hidden" name="act" value="logout">
-      <button class="btn2 red">خروج از پنل</button>
-    </form>
-
-    <p class="foot">سِرو · GitiArts · پشتیبانی تلگرام: <span dir="ltr">+98 919 834 5661</span></p>
-  </div>
+  </main>
 </div>
+
 <script>
-function cafFilter(){
-  var q=(document.getElementById('q').value||'').trim().toLowerCase();
-  var on=document.querySelector('.chip.on');
-  var st=on?on.getAttribute('data-f'):'all';
-  document.querySelectorAll('div.ten[data-cafe]').forEach(function(el){
-    var okQ=!q||el.getAttribute('data-cafe').indexOf(q)>=0;
-    var okS=st==='all'||el.getAttribute('data-st')===st||(st==='expiring'&&el.getAttribute('data-exp')==='1');
-    el.style.display=(okQ&&okS)?'':'none';
+function cafFilter() {
+  var q = (document.getElementById('q').value || '').trim().toLowerCase();
+  var st = document.getElementById('filter-status').value;
+  document.querySelectorAll('.cafe-item').forEach(function(el) {
+    var okQ = !q || el.getAttribute('data-cafe').indexOf(q) >= 0;
+    var okS = st === 'all' || el.getAttribute('data-st') === st;
+    el.style.display = (okQ && okS) ? '' : 'none';
   });
 }
-document.addEventListener('DOMContentLoaded',function(){
-  var q=document.getElementById('q');
-  if(q)q.addEventListener('input',cafFilter);
-  document.querySelectorAll('.chip').forEach(function(c){c.addEventListener('click',function(){
-    document.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on')});
-    c.classList.add('on');cafFilter();
-  });});
-});
 </script>
 </body>
 </html>

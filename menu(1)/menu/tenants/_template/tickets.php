@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════
    تیکت پشتیبانی — کافه‌دار v2 (حباب + فایل ضمیمه)
-   ═══════════════════════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 $slug = basename(__DIR__);
 $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
@@ -327,7 +327,6 @@ if ($__catFilter !== 'all') {
 usort($myTickets, fn($a, $b) => $b['updated'] <=> $a['updated']);
 
 $__tidQuery = trim((string)($_GET['tid'] ?? $_GET['id'] ?? ''));
-/* FIX_TK_SEARCH_V1 */
 $__allTickets = $d['tickets'] ?? [];
 if (!empty($slug)) {
   $__allTickets = array_values(array_filter($__allTickets, fn($t) => ($t['slug'] ?? '') === $slug));
@@ -351,9 +350,6 @@ if ($active !== null && $activeId > 0) {
     });
   } catch (Throwable $e) { }
 }
-
-
-
 
 $catFa = ['technical'=>'🔧 فنی','billing'=>'💰 مالی','feature'=>'💡 قابلیت','general'=>'📝 عمومی'];
 $stFa  = ['open'=>'در انتظار','answered'=>'پاسخ داده شده','closed'=>'بسته'];
@@ -394,205 +390,237 @@ function fsize(int $b): string {
 <title>پشتیبانی — <?= htmlspecialchars($brand) ?></title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Vazirmatn,sans-serif;background:#EFE7D6;color:#271D12;min-height:100dvh;padding:20px 14px}
-.wrap{max-width:860px;margin:0 auto}
-.head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.head h1{font-size:20px;font-weight:800}
-.head a{color:#7D6C54;text-decoration:none;font-size:14px}
-.card{background:#FBF6EB;border:1px solid #DFD2B6;border-radius:16px;padding:18px 20px;margin-bottom:14px}
-.card h2{font-size:15px;font-weight:800;margin-bottom:14px;padding-bottom:8px;border-bottom:1px dashed #DFD2B6}
-label{display:block;margin-bottom:12px;font-size:14px}
-label span{display:block;margin-bottom:5px;font-weight:700}
-input[type=text],textarea,select{width:100%;padding:10px 12px;border:1px solid #DFD2B6;border-radius:10px;font-family:inherit;font-size:14px;background:#fff;color:#271D12}
-input:focus,textarea:focus,select:focus{outline:none;border-color:#B4531F;box-shadow:0 0 0 3px rgba(180,83,31,.1)}
-textarea{resize:vertical;min-height:90px}
-.file-input{padding:8px;border:1.5px dashed #DFD2B6;border-radius:10px;background:#FBF6EB;cursor:pointer;font-size:13px}
-.file-input::file-selector-button{padding:6px 14px;background:#B4531F;color:#fff;border:0;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;margin-left:8px}
-.btn{display:inline-block;padding:11px 22px;background:#B4531F;color:#fff;border:0;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
-.btn:hover{opacity:.9}
-.btn.ghost{background:transparent;color:#271D12;border:1px solid #DFD2B6}
-.msg{padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px}
-.msg.ok{background:#E8F4E3;border:1px solid #BFDCA8;color:#3D6F2B}
-.msg.err{background:#FBEAE4;border:1px solid #EFC5B6;color:#8A2C12}
+/* ── پالت رنگی اختصاصی شما ── */
+:root {
+  --bg-canvas: #EFE7D6; --bg-surface: #FBF6EB; --bg-surface-hover: #F2EADA;
+  --bg-sidebar: #271D12; --border-subtle: #DFD2B6; --text-primary: #271D12;
+  --text-secondary: #7D6C54; --text-inverse: #FBF6EB;
+  --accent-500: #B4531F; --accent-600: #9A4517;
+  --success-500: #4F7A3D; --warning-500: #B07C1F; --danger-500: #A93B2A;
+  --radius-md: 10px; --radius-lg: 16px; --shadow-sm: 0 1px 3px rgba(39, 29, 18, 0.05);
+  --font-family: 'Vazirmatn', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-family); background: var(--bg-canvas); color: var(--text-primary); display: flex; min-height: 100vh; line-height: 1.8; }
 
-/* حباب تیکت‌ها در لیست */
-.bubble-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
-.bubble{position:relative;background:linear-gradient(145deg,#FBF6EB 0%,#F2EADA 100%);border:1.5px solid #DFD2B6;border-radius:20px;padding:16px 18px 14px;cursor:pointer;text-decoration:none;color:inherit;transition:all .18s ease;overflow:hidden;display:block;box-shadow:0 2px 6px rgba(139,115,85,.05)}
-.bubble:hover{transform:translateY(-2px);border-color:#B4531F;box-shadow:0 6px 16px rgba(180,83,31,.13)}
-.bubble::before{content:'';position:absolute;top:0;right:0;width:8px;height:100%;background:var(--st-color,#DFD2B6)}
-.bubble-sub{font-size:14px;font-weight:800;color:#271D12;margin-bottom:8px;line-height:1.5;padding-right:8px}
-.bubble-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#7D6C54;padding-right:8px}
+/* ── Layout ── */
+.app-layout { display: flex; width: 100%; }
+.main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100vh; }
+.topbar { height: 64px; background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+.content-area { padding: 24px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+/* ── Sidebar ── */
+.sidebar { width: 260px; background: var(--bg-sidebar); color: var(--text-inverse); display: flex; flex-direction: column; flex-shrink: 0; }
+.brand { padding: 24px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--bg-surface); }
+.nav-menu { list-style: none; padding: 16px 0; flex: 1; }
+.nav-item { padding: 12px 24px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.2s; color: #CBBB99; font-weight: 500; text-decoration: none; position: relative; }
+.nav-item:hover { background: rgba(255,255,255,0.05); color: var(--bg-surface); }
+.nav-item.active { background: var(--accent-500); color: white; border-right: 4px solid #E59A6B; }
+.nav-item .icon { font-size: 18px; }
+.nav-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 16px 24px; }
+.sidebar-footer { padding: 24px; border-top: 1px solid rgba(255,255,255,0.1); }
+
+/* ── Components ── */
+.card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); margin-bottom: 24px; }
+.page-title { font-size: 18px; font-weight: 700; }
+.user-badge { background: var(--bg-canvas); padding: 6px 16px; border-radius: 50px; font-size: 13px; font-weight: 600; border: 1px solid var(--border-subtle); }
+
+.alert{padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px}
+.alert.ok{background:#E8F4E3;border:1px solid #BFDCA8;color:#3D6F2B}
+.alert.err{background:#FBEAE4;border:1px solid #EFC5B6;color:#8A2C12}
+
+/* ── Ticket List ── */
+.bubble-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.bubble{position:relative;background:linear-gradient(145deg,var(--bg-surface) 0%,var(--bg-surface-hover) 100%);border:1.5px solid var(--border-subtle);border-radius:18px;padding:16px 18px 14px;cursor:pointer;text-decoration:none;color:inherit;transition:all .18s ease;overflow:hidden;display:block;box-shadow:0 2px 6px rgba(139,115,85,.05)}
+.bubble:hover{transform:translateY(-2px);border-color:var(--accent-500);box-shadow:0 6px 16px rgba(180,83,31,.13)}
+.bubble::before{content:'';position:absolute;top:0;right:0;width:6px;height:100%;background:var(--st-color,var(--border-subtle))}
+.bubble-sub{font-size:14px;font-weight:800;color:var(--text-primary);margin-bottom:8px;line-height:1.5;padding-right:8px}
+.bubble-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text-secondary);padding-right:8px}
 .bubble-pill{position:absolute;top:14px;left:16px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800}
-.bubble-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;background:#271D12;color:#fff;font-size:11px;font-weight:800;padding:0 6px}
+.bubble-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;background:var(--text-primary);color:#fff;font-size:11px;font-weight:800;padding:0 6px}
 
-/* حباب پیام‌ها */
+/* ── Chat Bubbles ── */
 .msgs{padding:10px 0;margin-bottom:14px}
 .msg-row{padding:12px 16px;border-radius:18px;margin-bottom:12px;max-width:82%;line-height:1.85;font-size:14px;word-wrap:break-word;position:relative;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-.msg-row.cafe{background:linear-gradient(135deg,#B4531F 0%,#9A4517 100%);color:#fff;margin-left:auto;border-bottom-left-radius:6px}
-.msg-row.admin{background:#fff;color:#271D12;margin-right:auto;border:1px solid #DFD2B6;border-bottom-right-radius:6px}
+.msg-row.cafe{background:linear-gradient(135deg,var(--accent-500) 0%,var(--accent-600) 100%);color:#fff;margin-left:auto;border-bottom-left-radius:6px}
+.msg-row.admin{background:#fff;color:var(--text-primary);margin-right:auto;border:1px solid var(--border-subtle);border-bottom-right-radius:6px}
 .msg-row .who{font-size:11px;margin-bottom:6px;font-weight:800;opacity:.85}
 .msg-row .when{font-size:10px;margin-top:8px;opacity:.7}
 .msg-row .text{white-space:pre-wrap}
 .file-attach{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;background:rgba(255,255,255,.18);border-radius:10px;text-decoration:none;color:inherit;font-size:12px;font-weight:700}
-.msg-row.admin .file-attach{background:#F2EADA;border:1px solid #DFD2B6}
-.file-attach:hover{opacity:.85}
+.msg-row.admin .file-attach{background:var(--bg-surface-hover);border:1px solid var(--border-subtle)}
 
-.empty{padding:36px 20px;text-align:center;color:#7D6C54;font-size:14px;line-height:2}
-.empty-icon{font-size:44px;display:block;margin-bottom:8px;opacity:.6}
+/* ── Forms & Inputs ── */
+input[type=text],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--border-subtle);border-radius:10px;font-family:inherit;font-size:14px;background:#fff;color:var(--text-primary)}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent-500);box-shadow:0 0 0 3px rgba(180,83,31,.1)}
+textarea{resize:vertical;min-height:90px}
+.file-input{padding:8px;border:1.5px dashed var(--border-subtle);border-radius:10px;background:var(--bg-surface);cursor:pointer;font-size:13px;width:100%}
+.file-input::file-selector-button{padding:6px 14px;background:var(--accent-500);color:#fff;border:0;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;margin-left:8px}
+label span{display:block;margin-bottom:5px;font-weight:700;font-size:13px;color:var(--text-secondary)}
+.btn{display:inline-block;padding:11px 22px;background:var(--accent-500);color:#fff;border:0;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none}
+.btn:hover{opacity:.9}
+.btn.ghost{background:transparent;color:var(--text-primary);border:1px solid var(--border-subtle)}
+.btn.danger{background:var(--danger-500)}
 
-.detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed #DFD2B6}
-.detail-head h3{font-size:16px;font-weight:800;margin-bottom:6px}
-.detail-head .meta{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#7D6C54}
-
-/* CAFE_CAT_TABS_CSS */
-.cat-tab{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#FBF6EB;border:1px solid #DFD2B6;border-radius:20px;text-decoration:none;color:#271D12;font-size:12px;font-weight:700;transition:.15s;font-family:inherit}
-.cat-tab:hover{background:#F2EADA;border-color:#B4531F}
-.cat-tab.on{background:#B4531F;color:#fff;border-color:#B4531F}
-.cat-cnt{display:inline-block;background:rgba(180,83,31,.15);color:#B4531F;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:800}
+/* ── Categories ── */
+.cat-tab{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:20px;text-decoration:none;color:var(--text-primary);font-size:12px;font-weight:700;transition:.15s;font-family:inherit}
+.cat-tab:hover{background:var(--bg-surface-hover);border-color:var(--accent-500)}
+.cat-tab.on{background:var(--accent-500);color:#fff;border-color:var(--accent-500)}
+.cat-cnt{display:inline-block;background:rgba(180,83,31,.15);color:var(--accent-500);padding:1px 7px;border-radius:10px;font-size:10px;font-weight:800}
 .cat-tab.on .cat-cnt{background:rgba(255,255,255,.3);color:#fff}
+
+.empty{padding:36px 20px;text-align:center;color:var(--text-secondary);font-size:14px;line-height:2}
+.empty-icon{font-size:44px;display:block;margin-bottom:8px;opacity:.6}
+.detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--border-subtle)}
+.detail-head h3{font-size:16px;font-weight:800;margin-bottom:6px}
+.detail-head .meta{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary)}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="head">
-    <div>
-      <h1>🎫 پشتیبانی</h1>
-      <p style="font-size:13px;color:#7D6C54;margin-top:4px"><?= htmlspecialchars($brand) ?> — ارتباط مستقیم با تیم GitiArts</p>
-    </div>
-    <a href="hub.php">‹ بازگشت به پنل</a>
-  </div>
 
-      <?php /* ID_SEARCH_V1 */ ?>
-      <form method="get" style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-        <?php if (!empty($__stFilter)): ?><input type="hidden" name="st" value="<?= htmlspecialchars($__stFilter) ?>"><?php endif; ?>
-        <?php if (!empty($__catFilter)): ?><input type="hidden" name="cat" value="<?= htmlspecialchars($__catFilter) ?>"><?php endif; ?>
-        <input type="text" name="tid" placeholder="🔍 شناسه تیکت (مثلاً ME-JO-1405-07-24-10-58-25-A3F5)" style="flex:1;padding:10px 14px;border:1px solid #DFD2B6;border-radius:12px;font-family:inherit;font-size:14px;background:#FBF6EB" min="1">
-        <button type="submit" style="padding:10px 20px;background:#271D12;color:#fff;border:0;border-radius:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">باز کن</button>
-      </form>
+<div class="app-layout">
+  <?php require_once __DIR__ . '/sidebar.php'; ?>
 
-  <?php if ($msg): ?><div class="msg ok"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
-  <?php if ($err): ?><div class="msg err">⚠️ <?= htmlspecialchars($err) ?></div><?php endif; ?>
+  <main class="main-content">
+    <header class="topbar">
+      <div class="page-title">🎫 پشتیبانی</div>
+      <div class="user-badge"><?= htmlspecialchars($user) ?></div>
+    </header>
 
-  <?php if (!$active): ?>
-    <!-- لیست حبابی -->
-    <div class="card">
-      <?php /* CAFE_CAT_TABS_V1 */ ?>
-      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-        <a class="cat-tab <?= $__catFilter==='all'?'on':'' ?>" href="?cat=all">همه <span class="cat-cnt"><?= count($__catCounts)-array_sum(array_slice($__catCounts,1)) ?></span></a>
-        <a class="cat-tab <?= $__catFilter==='technical'?'on':'' ?>" href="?cat=technical">🔧 فنی <?php if ($__catCounts['technical'] > 0): ?><span class="cat-cnt"><?= $__catCounts['technical'] ?></span><?php endif; ?></a>
-        <a class="cat-tab <?= $__catFilter==='billing'?'on':'' ?>" href="?cat=billing">💰 مالی <?php if ($__catCounts['billing'] > 0): ?><span class="cat-cnt"><?= $__catCounts['billing'] ?></span><?php endif; ?></a>
-        <a class="cat-tab <?= $__catFilter==='feature'?'on':'' ?>" href="?cat=feature">💡 قابلیت <?php if ($__catCounts['feature'] > 0): ?><span class="cat-cnt"><?= $__catCounts['feature'] ?></span><?php endif; ?></a>
-        <a class="cat-tab <?= $__catFilter==='general'?'on':'' ?>" href="?cat=general">📝 عمومی <?php if ($__catCounts['general'] > 0): ?><span class="cat-cnt"><?= $__catCounts['general'] ?></span><?php endif; ?></a>
-      </div>
-      <h2>📋 تیکت‌های من <?php if ($myTickets): ?><span style="font-size:11px;color:#7D6C54;font-weight:400">(<?= count($myTickets) ?> مورد)</span><?php endif; ?></h2>
-      <?php if (empty($myTickets)): ?>
-        <div class="empty">
-          <span class="empty-icon">📭</span>
-          هنوز تیکتی ثبت نکرده‌اید<br>
-          <span style="font-size:12px">اگر سوال یا مشکلی دارید، فرم زیر را پر کنید</span>
+    <div class="content-area">
+      <?php if ($msg): ?><div class="alert ok"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
+      <?php if ($err): ?><div class="alert err">⚠️ <?= htmlspecialchars($err) ?></div><?php endif; ?>
+
+      <?php if (!$active): ?>
+        <!-- List View -->
+        <div class="card" style="margin-bottom:16px; padding:16px">
+          <form method="get" style="display:flex;gap:8px;align-items:center">
+            <input type="text" name="tid" placeholder="🔍 جستجوی شناسه تیکت..." style="flex:1;padding:10px 14px;border:1px solid var(--border-subtle);border-radius:12px;font-family:inherit;font-size:14px;background:var(--bg-surface)" min="1">
+            <button type="submit" class="btn" style="padding:10px 20px">باز کن</button>
+          </form>
         </div>
+
+        <div class="card">
+          <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+            <a class="cat-tab <?= $__catFilter==='all'?'on':'' ?>" href="?cat=all">همه <span class="cat-cnt"><?= $__catCounts['all'] ?></span></a>
+            <a class="cat-tab <?= $__catFilter==='technical'?'on':'' ?>" href="?cat=technical">🔧 فنی <?php if ($__catCounts['technical'] > 0): ?><span class="cat-cnt"><?= $__catCounts['technical'] ?></span><?php endif; ?></a>
+            <a class="cat-tab <?= $__catFilter==='billing'?'on':'' ?>" href="?cat=billing">💰 مالی <?php if ($__catCounts['billing'] > 0): ?><span class="cat-cnt"><?= $__catCounts['billing'] ?></span><?php endif; ?></a>
+            <a class="cat-tab <?= $__catFilter==='feature'?'on':'' ?>" href="?cat=feature">💡 قابلیت <?php if ($__catCounts['feature'] > 0): ?><span class="cat-cnt"><?= $__catCounts['feature'] ?></span><?php endif; ?></a>
+            <a class="cat-tab <?= $__catFilter==='general'?'on':'' ?>" href="?cat=general">📝 عمومی <?php if ($__catCounts['general'] > 0): ?><span class="cat-cnt"><?= $__catCounts['general'] ?></span><?php endif; ?></a>
+          </div>
+          
+          <h2 style="font-size:16px; font-weight:800; margin-bottom:16px; border-bottom:1px dashed var(--border-subtle); padding-bottom:12px">📋 تیکت‌های من</h2>
+          
+          <?php if (empty($myTickets)): ?>
+            <div class="empty">
+              <span class="empty-icon">📭</span>
+              هنوز تیکتی ثبت نکرده‌اید<br>
+              <span style="font-size:12px">اگر سوال یا مشکلی دارید، فرم زیر را پر کنید</span>
+            </div>
+          <?php else: ?>
+            <div class="bubble-grid">
+              <?php foreach ($myTickets as $t): ?>
+                <a class="bubble" href="?id=<?= (int)$t['id'] ?>" style="--st-color:<?= $stFg[$t['status']] ?? '#7D6C54' ?>">
+                  <span class="bubble-pill" style="background:<?= $stBg[$t['status']] ?? '#EFE7D6' ?>;color:<?= $stFg[$t['status']] ?? '#7D6C54' ?>"><?= $stFa[$t['status']] ?? $t['status'] ?></span>
+                  <div class="bubble-sub"><?= htmlspecialchars(mb_substr($t['subject'], 0, 50)) ?></div>
+                  <div class="bubble-meta">
+                    <span style="font-weight:800">#<?= htmlspecialchars($t['tid'] ?? (string)$t['id']) ?></span>
+                    <span><?= $catFa[$t['category']] ?? $t['category'] ?></span>
+                    <span>🕐 <?= ftime((int)$t['updated']) ?></span>
+                    <span class="bubble-count"><?= count($t['messages']) ?></span>
+                  </div>
+                </a>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
+
+        <!-- New Ticket Form -->
+        <div class="card">
+          <h2 style="font-size:16px; font-weight:800; margin-bottom:16px; border-bottom:1px dashed var(--border-subtle); padding-bottom:12px">✏️ ثبت تیکت جدید</h2>
+          <form method="post" enctype="multipart/form-data">
+            <input type="hidden" name="act" value="new">
+            <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
+            <label style="display:block; margin-bottom:12px"><span>موضوع</span>
+              <input type="text" name="subject" required maxlength="120" placeholder="مثلاً: مشکل در چاپ فاکتور">
+            </label>
+            <label style="display:block; margin-bottom:12px"><span>دسته‌بندی</span>
+              <select name="category">
+                <option value="technical">🔧 فنی</option>
+                <option value="billing">💰 مالی / اشتراک</option>
+                <option value="feature">💡 درخواست قابلیت</option>
+                <option value="general">📝 عمومی</option>
+              </select>
+            </label>
+            <label style="display:block; margin-bottom:12px"><span>توضیحات</span>
+              <textarea name="body" required maxlength="2000" placeholder="مشکل یا درخواست خود را کامل توضیح دهید..."></textarea>
+            </label>
+            <label style="display:block; margin-bottom:16px"><span>📎 فایل ضمیمه (اختیاری — حداکثر ۵ مگابایت)</span>
+              <input class="file-input" type="file" name="attach" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip">
+            </label>
+            <button class="btn" type="submit">📤 ارسال تیکت</button>
+          </form>
+        </div>
+
       <?php else: ?>
-        <div class="bubble-grid">
-          <?php foreach ($myTickets as $t): ?>
-            <a class="bubble" href="?id=<?= (int)$t['id'] ?>" style="--st-color:<?= $stFg[$t['status']] ?? '#7D6C54' ?>">
-              <span class="bubble-pill" style="background:<?= $stBg[$t['status']] ?? '#EFE7D6' ?>;color:<?= $stFg[$t['status']] ?? '#7D6C54' ?>"><?= $stFa[$t['status']] ?? $t['status'] ?></span>
-              <div class="bubble-sub"><?= htmlspecialchars(mb_substr($t['subject'], 0, 50)) ?></div>
-              <div class="bubble-meta">
-                <span style="font-weight:800">#<?= htmlspecialchars($t['tid'] ?? (string)$t['id']) ?></span>
-                <span><?= $catFa[$t['category']] ?? $t['category'] ?></span>
-                <span>🕐 <?= ftime((int)$t['updated']) ?></span>
-                <span class="bubble-count"><?= count($t['messages']) ?></span>
+        <!-- Detail View -->
+        <div class="card">
+          <div class="detail-head">
+            <div style="flex:1">
+              <h3>#<?= htmlspecialchars($active['tid'] ?? (string)$active['id']) ?> — <?= htmlspecialchars($active['subject']) ?></h3>
+              <div class="meta">
+                <span><?= $catFa[$active['category']] ?? $active['category'] ?></span>
+                <span>🕐 ایجاد: <?= ftime((int)$active['created']) ?></span>
               </div>
-            </a>
-          <?php endforeach; ?>
+            </div>
+            <span class="bubble-pill" style="position:static;background:<?= $stBg[$active['status']] ?? '#EFE7D6' ?>;color:<?= $stFg[$active['status']] ?? '#7D6C54' ?>"><?= $stFa[$active['status']] ?? $active['status'] ?></span>
+          </div>
+
+          <div class="msgs">
+            <?php foreach ($active['messages'] as $m): ?>
+              <div class="msg-row <?= $m['from'] === 'cafe' ? 'cafe' : 'admin' ?>">
+                <div class="who"><?= $m['from'] === 'cafe' ? '👤 '.htmlspecialchars($m['author']) : '🎧 پشتیبانی GitiArts' ?></div>
+                <div class="text"><?= htmlspecialchars($m['text']) ?></div>
+                <?php if (!empty($m['file'])): ?>
+                  <?php $f = $m['file']; ?>
+                  <a class="file-attach" href="?dl=<?= (int)$active['id'] ?>&f=<?= htmlspecialchars($f['hash']) ?>" download>
+                    📎 <?= htmlspecialchars($f['name']) ?> · <?= fsize((int)$f['size']) ?>
+                  </a>
+                <?php endif; ?>
+                <div class="when"><?= ftime((int)$m['ts']) ?></div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+
+          <?php if ($active['status'] !== 'closed'): ?>
+            <form method="post" enctype="multipart/form-data" style="margin-top:16px; border-top:1px solid var(--border-subtle); padding-top:16px">
+              <input type="hidden" name="act" value="reply">
+              <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
+              <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
+              <textarea name="text" required maxlength="2000" placeholder="پاسخ خود را بنویسید..."></textarea>
+              <label style="margin-top:10px; display:block"><span>📎 فایل ضمیمه (اختیاری)</span>
+                <input class="file-input" type="file" name="attach" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip">
+              </label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap; margin-top:12px">
+                <button class="btn" type="submit">📤 ارسال پاسخ</button>
+                <a href="tickets.php" class="btn ghost">‹ بازگشت</a>
+              </div>
+            </form>
+            <form method="post" style="margin-top:10px" onsubmit="return confirm('تیکت بسته شود؟')">
+              <input type="hidden" name="act" value="close">
+              <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
+              <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
+              <button class="btn danger" type="submit" style="font-size:12px">✓ بستن تیکت</button>
+            </form>
+          <?php else: ?>
+            <p style="font-size:13px;color:var(--text-secondary);margin-top:16px">این تیکت بسته شده است.</p>
+            <a href="tickets.php" class="btn ghost" style="margin-top:10px">‹ بازگشت به لیست</a>
+          <?php endif; ?>
         </div>
       <?php endif; ?>
     </div>
-
-    <!-- فرم تیکت جدید -->
-    <div class="card">
-      <h2>✏️ تیکت جدید</h2>
-      <form method="post" enctype="multipart/form-data">
-        <input type="hidden" name="act" value="new">
-        <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
-        <label><span>موضوع</span>
-          <input type="text" name="subject" required maxlength="120" placeholder="مثلاً: مشکل در چاپ فاکتور">
-        </label>
-        <label><span>دسته‌بندی</span>
-          <select name="category">
-            <option value="technical">🔧 فنی</option>
-            <option value="billing">💰 مالی / اشتراک</option>
-            <option value="feature">💡 درخواست قابلیت</option>
-            <option value="general">📝 عمومی</option>
-          </select>
-        </label>
-        <label><span>توضیحات</span>
-          <textarea name="body" required maxlength="2000" placeholder="مشکل یا درخواست خود را کامل توضیح دهید..."></textarea>
-        </label>
-        <label><span>📎 فایل ضمیمه (اختیاری — حداکثر ۵ مگابایت)</span>
-          <input class="file-input" type="file" name="attach" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip">
-        </label>
-        <button class="btn" type="submit">📤 ارسال تیکت</button>
-      </form>
-    </div>
-  <?php else: ?>
-    <!-- نمایش تیکت -->
-    <div class="card">
-      <div class="detail-head">
-        <div style="flex:1">
-          <h3>#<?= htmlspecialchars($active['tid'] ?? (string)$active['id']) ?> — <?= htmlspecialchars($active['subject']) ?></h3>
-          <div class="meta">
-            <span><?= $catFa[$active['category']] ?? $active['category'] ?></span>
-            <span>🕐 ایجاد: <?= ftime((int)$active['created']) ?></span>
-          </div>
-        </div>
-        <span class="bubble-pill" style="position:static;background:<?= $stBg[$active['status']] ?? '#EFE7D6' ?>;color:<?= $stFg[$active['status']] ?? '#7D6C54' ?>"><?= $stFa[$active['status']] ?? $active['status'] ?></span>
-      </div>
-
-      <div class="msgs">
-        <?php foreach ($active['messages'] as $m): ?>
-          <div class="msg-row <?= $m['from'] === 'cafe' ? 'cafe' : 'admin' ?>">
-            <div class="who"><?= $m['from'] === 'cafe' ? '👤 '.htmlspecialchars($m['author']) : '🎧 پشتیبانی GitiArts' ?></div>
-            <div class="text"><?= htmlspecialchars($m['text']) ?></div>
-            <?php if (!empty($m['file'])): ?>
-              <?php $f = $m['file']; ?>
-              <a class="file-attach" href="?dl=<?= (int)$active['id'] ?>&f=<?= htmlspecialchars($f['hash']) ?>" download>
-                📎 <?= htmlspecialchars($f['name']) ?> · <?= fsize((int)$f['size']) ?>
-              </a>
-            <?php endif; ?>
-            <div class="when"><?= ftime((int)$m['ts']) ?></div>
-          </div>
-        <?php endforeach; ?>
-      </div>
-
-      <?php if ($active['status'] !== 'closed'): ?>
-        <form method="post" enctype="multipart/form-data" style="margin-top:14px">
-          <input type="hidden" name="act" value="reply">
-          <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
-          <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
-          <textarea name="text" required maxlength="2000" placeholder="پاسخ خود را بنویسید..."></textarea>
-          <label style="margin-top:10px"><span>📎 فایل ضمیمه (اختیاری)</span>
-            <input class="file-input" type="file" name="attach" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip">
-          </label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn" type="submit">📤 ارسال پاسخ</button>
-            <a href="tickets.php" class="btn ghost" style="text-decoration:none;line-height:1.4">‹ بازگشت</a>
-          </div>
-        </form>
-        <form method="post" style="margin-top:10px" onsubmit="return confirm('تیکت بسته شود؟')">
-          <input type="hidden" name="act" value="close">
-          <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
-          <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
-          <button class="btn ghost" type="submit" style="font-size:12px">✓ بستن تیکت</button>
-        </form>
-      <?php else: ?>
-        <p style="font-size:13px;color:#7D6C54;margin-top:12px">این تیکت بسته شده است.</p>
-        <a href="tickets.php" class="btn ghost" style="margin-top:10px;text-decoration:none;display:inline-block">‹ بازگشت به لیست</a>
-      <?php endif; ?>
-    </div>
-  <?php endif; ?>
+  </main>
 </div>
 </body>
 </html>
