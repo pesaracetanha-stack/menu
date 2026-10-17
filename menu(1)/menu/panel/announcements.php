@@ -27,6 +27,18 @@ function an_save(string $f, array $d): void {
   if (!is_dir($dir)) @mkdir($dir, 0755, true);
   @file_put_contents($f, json_encode($d, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
 }
+
+require_once __DIR__ . '/../api/lib/atomic-json.php';
+
+/* ATOMIC_RMW: خواندن/تغییر/نوشتن اتمیک با flock */
+function an_update(string $f, callable $fn): array {
+  return ajl_update($f, function(array $d) use ($fn) {
+    if (!isset($d['items'])) $d['items'] = [];
+    if (!isset($d['nextId'])) $d['nextId'] = 1;
+    $result = $fn($d);
+    return is_array($result) ? $result : $d;
+  });
+}
 function an_upload(array $file, string $dir): ?string {
   if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) return null;
   if ($file['error'] !== UPLOAD_ERR_OK) return null;
@@ -70,51 +82,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $ts = strtotime($expiresAt);
           if ($ts !== false && $ts > time()) $exp = $ts;
         }
-        $d = an_load($annoFile);
-        $id = (int)$d['nextId']; $d['nextId']++;
-        $d['items'][] = [
-          'id' => $id,
-          'title' => $title,
-          'body' => $body,
-          'type' => $type,
-          'image' => $imgName,
-          'created' => time(),
-          'expires' => $exp,
-          'active' => true,
-          'target' => $target === 'all' ? 'all' : [],
-          'read_by' => [],
-        ];
-        an_save($annoFile, $d);
-        $msg = "✅ اعلان #$id ثبت شد";
-        plat_log('announcement_create', ['id' => $id]);
+        $newAnnoId = 0;
+        an_update($annoFile, function(array $d) use (&$newAnnoId, $title, $body, $type, $imgName, $exp, $target) {
+          $newAnnoId = (int)($d['nextId'] ?? 1);
+          $d['nextId'] = $newAnnoId + 1;
+          $d['items'][] = [
+            'id' => $newAnnoId,
+            'title' => $title,
+            'body' => $body,
+            'type' => $type,
+            'image' => $imgName,
+            'created' => time(),
+            'expires' => $exp,
+            'active' => true,
+            'target' => $target === 'all' ? 'all' : [],
+            'read_by' => [],
+          ];
+          return $d;
+        });
+        $msg = "✅ اعلان #$newAnnoId ثبت شد";
+        plat_log('announcement_create', ['id' => $newAnnoId]);
       }
     }
   } elseif ($act === 'toggle') {
     $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
-      $d = an_load($annoFile);
-      foreach ($d['items'] as $i => $it) {
-        if ((int)$it['id'] === $id) {
-          $d['items'][$i]['active'] = empty($it['active']);
-          an_save($annoFile, $d);
-          $msg = $d['items'][$i]['active'] ? '✅ فعال شد' : '⏸ غیرفعال شد';
-          break;
+      $newToggleState = null;
+      an_update($annoFile, function(array $d) use ($id, &$newToggleState) {
+        foreach ($d['items'] as $i => $it) {
+          if ((int)$it['id'] === $id) {
+            $d['items'][$i]['active'] = empty($it['active']);
+            $newToggleState = !empty($d['items'][$i]['active']);
+            break;
+          }
         }
+        return $d;
+      });
+      if ($newToggleState !== null) {
+        $msg = $newToggleState ? '✅ فعال شد' : '⏸ غیرفعال شد';
       }
     }
   } elseif ($act === 'delete') {
     $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
-      $d = an_load($annoFile);
-      $newItems = []; $removed = null;
-      foreach ($d['items'] as $it) {
-        if ((int)$it['id'] === $id) { $removed = $it; continue; }
-        $newItems[] = $it;
-      }
-      if ($removed) {
-        if (!empty($removed['image'])) @unlink($imgDir . '/' . $removed['image']);
+      $removedAnno = null;
+      an_update($annoFile, function(array $d) use ($id, &$removedAnno) {
+        $newItems = [];
+        foreach ($d['items'] as $it) {
+          if ((int)$it['id'] === $id) { $removedAnno = $it; continue; }
+          $newItems[] = $it;
+        }
         $d['items'] = $newItems;
-        an_save($annoFile, $d);
+        return $d;
+      });
+      if ($removedAnno) {
+        if (!empty($removedAnno['image'])) @unlink($imgDir . '/' . $removedAnno['image']);
         $msg = '🗑 حذف شد';
         plat_log('announcement_delete', ['id' => $id]);
       }
