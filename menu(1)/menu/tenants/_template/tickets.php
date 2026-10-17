@@ -16,6 +16,11 @@ if (empty($_SESSION['tenant']) || $_SESSION['tenant'] !== $slug) {
 }
 
 $user = (string)($_SESSION['tenant_user'] ?? 'کاربر');
+
+/* CSRF_V1 */
+if (empty($_SESSION['csrf'])) {
+  $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
 $root = dirname(__DIR__, 2);
 $tkFile = $root . '/data/tickets.json';
 $filesDir = $root . '/data/ticket-files';
@@ -215,7 +220,9 @@ $msg = ''; $err = '';
 $act = (string)($_POST['act'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  if ($act === 'new') {
+  if (!hash_equals($_SESSION['csrf'] ?? '', (string)($_POST['csrf'] ?? ''))) {
+    $err = 'نشست منقضی شده — صفحه را رفرش کنید';
+  } elseif ($act === 'new') {
     $subject = trim((string)($_POST['subject'] ?? ''));
     $body    = trim((string)($_POST['body'] ?? ''));
     $cat     = (string)($_POST['category'] ?? 'general');
@@ -509,6 +516,7 @@ textarea{resize:vertical;min-height:90px}
       <h2>✏️ تیکت جدید</h2>
       <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="act" value="new">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
         <label><span>موضوع</span>
           <input type="text" name="subject" required maxlength="120" placeholder="مثلاً: مشکل در چاپ فاکتور">
         </label>
@@ -562,6 +570,7 @@ textarea{resize:vertical;min-height:90px}
       <?php if ($active['status'] !== 'closed'): ?>
         <form method="post" enctype="multipart/form-data" style="margin-top:14px">
           <input type="hidden" name="act" value="reply">
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
           <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
           <textarea name="text" required maxlength="2000" placeholder="پاسخ خود را بنویسید..."></textarea>
           <label style="margin-top:10px"><span>📎 فایل ضمیمه (اختیاری)</span>
@@ -574,6 +583,7 @@ textarea{resize:vertical;min-height:90px}
         </form>
         <form method="post" style="margin-top:10px" onsubmit="return confirm('تیکت بسته شود؟')">
           <input type="hidden" name="act" value="close">
+          <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
           <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
           <button class="btn ghost" type="submit" style="font-size:12px">✓ بستن تیکت</button>
         </form>
