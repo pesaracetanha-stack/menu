@@ -93,3 +93,7 @@ Thumbs.db
 /cleanup-repo.php
 /fix-*.php
 /menu(1)/menu/fix-*.php
+
+# Runtime/test tenant data
+menu(1)/menu/tenants.json
+menu(1)/menu/tenants/*
