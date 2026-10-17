@@ -88,3 +88,8 @@ Thumbs.db
 /make-*.php
 /cleanup-*.php
 /*debug-*.php
+
+# One-time fix scripts
+/cleanup-repo.php
+/fix-*.php
+/menu(1)/menu/fix-*.php
