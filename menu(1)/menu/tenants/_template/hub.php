@@ -43,6 +43,8 @@ require_once __DIR__ . '/api/lib/auth.php';   /* t_license اینجاست — ن
   ['ic'=>'🎫','t'=>'پشتیبانی','d'=>'ارسال تیکت و پیگیری درخواست‌ها','url'=>'tickets.php','full'=>$base.'/tickets.php'],
   /* ANNOUNCEMENT_CARD_V1 */
   ['ic'=>'📢','t'=>'اعلانات','d'=>'اطلاعیه‌های تیم GitiArts','url'=>'announcements.php','full'=>$base.'/announcements.php'],
+  /* RENEW_BTN_V1 */
+  ['ic'=>'💳','t'=>'تمدید اشتراک','d'=>'تمدید یا ارتقای پلن','url'=>'renew.php','full'=>$base.'/renew.php'],
  ];
 /* v5: پرسنل (ورود با پین) فقط صندوق و آشپزخانه را می‌بیند — کارت مدیریت حذف می‌شود */
  $isStaff = ($_SESSION['tenant_role'] ?? 'admin') !== 'admin';
@@ -195,7 +197,7 @@ body{font-family:Vazirmatn,sans-serif;background:var(--bg);color:var(--ink);min-
     <?php if ($__showBanner): ?>
   <div style="background:#fff;border:2px solid <?= $__bColor ?>;border-radius:12px;padding:14px 18px;margin:14px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
     <div style="font-size:14px;color:<?= $__bColor ?>;font-weight:700;line-height:1.6"><?= htmlspecialchars($__bText) ?></div>
-    <button type="button" onclick="alert('برای تمدید اشتراک با پشتیبانی تماس بگیرید:\n\n📞 0919 834 5661\n💬 تلگرام: @GitiArts')" style="background:<?= $__bColor ?>;color:#fff;padding:8px 18px;border-radius:10px;border:0;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;white-space:nowrap">🔄 تمدید اشتراک</button>
+    <button type="button" onclick="location.href='renew.php'" style="background:<?= $__bColor ?>;color:#fff;padding:8px 18px;border-radius:10px;border:0;cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;white-space:nowrap">🔄 تمدید اشتراک</button>
   </div>
   <?php endif; ?>
 

@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       case 'trashdel':   plat_trash_delete_one($_POST['tname'] ?? '');
                          $ok = 'حذف قطعی انجام شد'; break;
 
-      /* ── تیکت‌های فایل نصبی ── */
+      /* ── درخواست‌های فایل مستقل ── */
       case 'approve_export':
         $tok = xc_approve((int)($_POST['id'] ?? 0), (string)($_POST['slug'] ?? ''));
         $sch = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -391,7 +391,7 @@ function plat_ev_fa(string $ev): string {
     </div>
 
     <div class="sec">
-      <h2>🎫 درخواست‌های فایل نصبی (تیکت)</h2>
+      <h2>📦 درخواست‌های فایل مستقل</h2>
       <?php if (!$reqs): ?><p class="mini">هیچ درخواستی ثبت نشده.</p><?php endif; ?>
       <?php foreach (array_reverse($reqs) as $r): $st = $r['status'] ?? ''; ?>
         <div class="ten">
@@ -565,7 +565,7 @@ function plat_ev_fa(string $ev): string {
           <div class="ten-h">
             <b><?= htmlspecialchars($x['name']) ?></b>
             <span class="pill <?= $x['active'] ? 'ok' : 'bad' ?>"><?= $x['active'] ? 'فعال' : 'غیرفعال' ?></span>
-            <?php if ($det['pending_export']): ?><span class="pill warn">تیکت در انتظار</span><?php endif; ?>
+            <?php if ($det['pending_export']): ?><span class="pill warn">درخواست در انتظار</span><?php endif; ?>
           </div>
           <div class="ten-plan" style="margin:6px 0 4px;font-size:13px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">
             <?php $__pk = plat_get_plan($x['slug']); $__pc = $cfg['plans'][$__pk] ?? $cfg['plans']['free']; ?>
