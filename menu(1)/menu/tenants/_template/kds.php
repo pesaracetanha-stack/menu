@@ -74,5 +74,6 @@ $isAdmin = (($_SESSION['tenant_role'] ?? 'admin') === 'admin');
 <script src="js/receipt.js"></script>
 <script src="js/actions.js"></script>
 <script src="js/app.js"></script>
+<script src="js/staff-alerts.js"></script>
 </body>
 </html>

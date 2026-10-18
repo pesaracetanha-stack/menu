@@ -55,7 +55,7 @@ function render(){
     r.innerHTML = customerHTML();
   }
   // اگر ستاپ انجام نشده و ادمین است، ویزارد را نشان بده
-  else if(isAdmin && Store.db && Store.db.setup && Store.db.setup.done === false) {
+  else if(isAdmin && Store.db && Store.db.setup && Store.db.setup.done === false && !window.__DESIGN_MODE__) {
     App.role = 'wizard';
     r.innerHTML = wizardHTML();
   }
@@ -167,7 +167,7 @@ const ui = {
    App.cst.tableNo = qt;
  } else if(!isAdmin) {
    App.role = 'customer';
- } else if(Store.db && Store.db.setup && !Store.db.setup.done) {
+ } else if(Store.db && Store.db.setup && !Store.db.setup.done && !window.__DESIGN_MODE__) {
    App.role = 'wizard';
  } else {
    App.role = 'admin';

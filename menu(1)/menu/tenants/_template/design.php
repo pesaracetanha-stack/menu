@@ -30,7 +30,8 @@ if (($_SESSION['tenant_role'] ?? 'admin') !== 'admin') {
   .design-layout { display: flex; height: 100vh; width: 100vw; direction: rtl; }
   
   /* ۲. کانتینر ویرایشگر */
-  #app { flex-grow: 1; height: 100vh; overflow-y: auto; position: relative; }
+  #app { flex-grow: 1; height: 100vh; overflow-y: auto; overflow-x: hidden; min-width: 0; position: relative; }
+  .menu-item, .item-card, .cat-row { max-width: 100%; box-sizing: border-box; word-break: break-word; }
   
   /* ۳. تزریق استایل‌های سایدبار (کپی شده از پنل ادمین برای جلوگیری از بهم ریختگی) */
   .sidebar { width: 250px; flex-shrink: 0; background: #271D12; color: #FBF6EB; display: flex; flex-direction: column; border-left: 1px solid #3A2C1E; height: 100%; }

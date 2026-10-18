@@ -615,3 +615,137 @@ body.kds-mode .empty-big p { color: #ccc; }
   70% { box-shadow: 0 0 0 12px rgba(211, 47, 47, 0); }
   100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
 }
+
+/* ════════════════════════════════════════════════════════════
+   Floating Order Tracker
+   ════════════════════════════════════════════════════════════ */
+.floating-tracker {
+    position: fixed;
+    bottom: 85px; /* بالای نوار تب‌بار */
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border: 2px solid #EFE7D6;
+    border-radius: 50px;
+    padding: 8px 16px 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 24px rgba(39,29,18,0.15);
+    z-index: 9000;
+    direction: rtl;
+    font-family: Vazirmatn, sans-serif;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: max-content;
+    max-width: 90vw;
+}
+.floating-tracker.ready {
+    border-color: #4CAF50;
+    background: #F8FDF8;
+    box-shadow: 0 8px 24px rgba(76,175,80,0.25);
+    animation: pulse-tracker 2s infinite;
+}
+.floating-tracker.done {
+    border-color: #B4531F;
+    background: #FBF6EB;
+}
+.ft-icon {
+    font-size: 24px;
+    background: #F4F1EA;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.floating-tracker.ready .ft-icon {
+    background: #E8F5E9;
+}
+.ft-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+.ft-title {
+    font-size: 13px;
+    font-weight: 900;
+    color: #271D12;
+}
+.ft-status {
+    font-size: 11px;
+    color: #7D6C54;
+    font-weight: 700;
+}
+.ft-timer {
+    font-family: monospace;
+    font-size: 15px;
+    font-weight: 900;
+    color: #B4531F;
+    background: #FFF;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid #EFE7D6;
+    min-width: 50px;
+    text-align: center;
+}
+@keyframes pulse-tracker {
+    0% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.02); }
+    100% { transform: translateX(-50%) scale(1); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   Staff Alert Banners (POS & KDS)
+   ════════════════════════════════════════════════════════════ */
+.staff-alert-banner {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translate(-50%, -20px);
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    z-index: 99999;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+    border-right: 6px solid #ccc;
+    min-width: 300px;
+}
+.staff-alert-banner.show {
+    transform: translate(-50%, 0);
+    opacity: 1;
+}
+.staff-alert-banner.alert-new {
+    border-right-color: #B4531F;
+    background: #FFF8F5;
+}
+.staff-alert-banner.alert-ready {
+    border-right-color: #4CAF50;
+    background: #F8FDF8;
+}
+.sa-icon {
+    font-size: 28px;
+}
+.sa-text {
+    display: flex;
+    flex-direction: column;
+}
+.sa-text b {
+    font-size: 16px;
+    color: #271D12;
+    font-family: Vazirmatn, sans-serif;
+    font-weight: 900;
+}
+.sa-text span {
+    font-size: 13px;
+    color: #7D6C54;
+    font-family: Vazirmatn, sans-serif;
+    margin-top: 4px;
+}

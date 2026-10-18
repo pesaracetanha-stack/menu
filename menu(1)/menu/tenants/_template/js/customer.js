@@ -182,3 +182,128 @@ function accountHTML(){
   <p class="dim" style="margin-top:16px">هر ${faM(PT().earn)} تومان خرید = ۱ امتیاز · هر امتیاز = ${faM(PT().value)} تومان تخفیف (تا سقف ${fa(PT().maxPct)}٪ صورت‌حساب)</p>
   <div class="acct-acts"><button class="btn ghost" data-act="logout-cust">${ic('logout',15)} خروج از حساب</button></div></div>`;
 }
+
+
+/* ════════════════════════════════════════════════════════════
+   ORDER TRACKER (Floating Widget + Sound + Notification)
+   ════════════════════════════════════════════════════════════ */
+let __lastOrderStatus = null;
+let __trackerInterval = null;
+
+function initOrderTracker() {
+    if (__trackerInterval) clearInterval(__trackerInterval);
+    
+    __trackerInterval = setInterval(async () => {
+        // اگر مشتری نیستیم یا سفارش فعالی نداریم، کاری نکن
+        if (App.role !== 'customer' || !Store.db) return;
+        
+        const o = activeOrder();
+        if (!o) {
+            __lastOrderStatus = null;
+            const el = document.getElementById('floating-tracker');
+            if (el) el.remove();
+            return;
+        }
+
+        // ساخت یا آپدیت ویجت
+        renderTrackerUI(o);
+
+        // چک کردن تغییر وضعیت
+        if (__lastOrderStatus && __lastOrderStatus !== o.status) {
+            if (o.status === 'ready') {
+                playReadySound();
+                ui.toast('🍳 غذای شما آماده است! لطفاً به صندوق مراجعه کنید.', { ttl: 8000 });
+            } else if (o.status === 'done') {
+                ui.toast('✅ سفارش شما تحویل داده شد. نوش جان!', { ttl: 5000 });
+                const el = document.getElementById('floating-tracker');
+                if (el) el.remove();
+            }
+        }
+        __lastOrderStatus = o.status;
+        
+        // آپدیت تایمر هر ثانیه (بدون نیاز به رفرش کل ویجت)
+        const timeEl = document.getElementById('tracker-timer');
+        if (timeEl && o.ts) {
+            timeEl.textContent = fmtDur(Date.now() - o.ts);
+        }
+
+    }, 5000); // Polling هر 5 ثانیه (می‌توانی به 10 تغییر دهی)
+}
+
+function renderTrackerUI(o) {
+    let el = document.getElementById('floating-tracker');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'floating-tracker';
+        el.className = 'floating-tracker';
+        document.body.appendChild(el);
+    }
+    
+    const st = ST[o.status] || ST.pending;
+    let statusText = st.t;
+    let icon = '⏳';
+    let extraClass = '';
+    
+    if (o.status === 'preparing') {
+        statusText = o.ready ? 'آماده تحویل' : 'در حال آماده‌سازی';
+        icon = o.ready ? '🔔' : '👨‍🍳';
+        if (o.ready) extraClass = 'ready';
+    } else if (o.status === 'done') {
+        statusText = 'تحویل شد';
+        icon = '✅';
+        extraClass = 'done';
+    } else if (o.status === 'pending') {
+        statusText = 'در انتظار تایید';
+        icon = '⏳';
+    }
+
+    // اگر ویجت از قبل هست، فقط کلاس و متن‌ها رو عوض کن تا تایمر نپره
+    if (el.innerHTML.trim() !== '') {
+        el.className = 'floating-tracker ' + extraClass;
+        el.querySelector('.ft-icon').textContent = icon;
+        el.querySelector('.ft-status').textContent = statusText;
+        return;
+    }
+
+    el.className = 'floating-tracker ' + extraClass;
+    el.innerHTML = `
+        <div class="ft-icon">${icon}</div>
+        <div class="ft-info">
+            <div class="ft-title">سفارش #${fa(o.num)}</div>
+            <div class="ft-status">${statusText}</div>
+        </div>
+        <div class="ft-timer" id="tracker-timer">${fmtDur(Date.now() - o.ts)}</div>
+    `;
+}
+
+function playReadySound() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        
+        // پخش یک صدای زنگ دوتایی (Ding-Dong)
+        [0, 0.3].forEach(delay => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(delay === 0 ? 880 : 1046.50, ctx.currentTime + delay); // A5 و C6
+            gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+            gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + delay + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.4);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + delay);
+            osc.stop(ctx.currentTime + delay + 0.5);
+        });
+    } catch (e) {
+        console.log('Audio blocked by browser', e);
+    }
+}
+
+// Hook into customer render to start tracking
+const __originalCustomerHTML = customerHTML;
+customerHTML = function() {
+    setTimeout(initOrderTracker, 100);
+    return __originalCustomerHTML.apply(this, arguments);
+};
