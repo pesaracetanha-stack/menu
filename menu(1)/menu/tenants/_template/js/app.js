@@ -155,8 +155,8 @@ const ui = {
  const qs = new URLSearchParams(location.search);
  const qt = parseInt(qs.get('table'), 10);
  const rp = qs.get('role');
- /* v5.0.1: نقش از نام صفحه — cashier.html / kds.html همان اپ کامل با نقش آماده‌اند */
- const page = (location.pathname.match(/(cashier|kds)\.html$/) || [])[1] || null;
+ /* v5.0.1: نقش از نام صفحه — cashier.php / kds.php همان اپ کامل با نقش آماده‌اند */
+ const page = (location.pathname.match(/(cashier|kds)\.(html|php)$/) || [])[1] || null;
 
  if(qt && (Store.db.tables || []).some(t => t.no === qt)){
    App.role = 'customer';

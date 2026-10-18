@@ -36,10 +36,10 @@ try {
       <li class="nav-item" onclick="window.location.href='index.html'">
         <span class="icon">🎨</span> طراحی منو
       </li>
-      <li class="nav-item" onclick="window.location.href='cashier.html'">
+      <li class="nav-item" onclick="window.location.href='cashier.php'">
         <span class="icon">💳</span> صندوق
       </li>
-      <li class="nav-item" onclick="window.location.href='kds.html'">
+      <li class="nav-item" onclick="window.location.href='kds.php'">
         <span class="icon">🍳</span> آشپزخانه
       </li>
       
@@ -55,10 +55,10 @@ try {
         <span class="icon">💳</span> تمدید اشتراک
       </li>
     <?php else: ?>
-      <li class="nav-item" onclick="window.location.href='cashier.html'">
+      <li class="nav-item" onclick="window.location.href='cashier.php'">
         <span class="icon">💳</span> صندوق
       </li>
-      <li class="nav-item" onclick="window.location.href='kds.html'">
+      <li class="nav-item" onclick="window.location.href='kds.php'">
         <span class="icon">🍳</span> آشپزخانه
       </li>
       <li class="nav-item" onclick="window.location.href='hub.php'">

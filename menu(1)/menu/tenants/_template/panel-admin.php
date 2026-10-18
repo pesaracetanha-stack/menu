@@ -152,10 +152,10 @@ tr:hover td { background: var(--bg-surface-hover); }
       <li class="nav-item" onclick="window.location.href='index.html'">
         <span class="icon">🎨</span> طراحی منو
       </li>
-      <li class="nav-item" onclick="window.location.href='cashier.html'">
+      <li class="nav-item" onclick="window.location.href='cashier.php'">
         <span class="icon">💳</span> صندوق
       </li>
-      <li class="nav-item" onclick="window.location.href='kds.html'">
+      <li class="nav-item" onclick="window.location.href='kds.php'">
         <span class="icon">🍳</span> آشپزخانه
       </li>
       
@@ -223,8 +223,8 @@ tr:hover td { background: var(--bg-surface-hover); }
           <div class="card-header"><div class="card-title">🛠 دسترسی سریع</div></div>
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
             <a href="index.html" class="btn btn-primary btn-big"><span class="icon">🎨</span> طراحی منو</a>
-            <a href="kds.html" class="btn btn-outline btn-big"><span class="icon">🍳</span> آشپزخانه</a>
-            <a href="cashier.html" class="btn btn-outline btn-big"><span class="icon">💳</span> صندوق</a>
+            <a href="kds.php" class="btn btn-outline btn-big"><span class="icon">🍳</span> آشپزخانه</a>
+            <a href="cashier.php" class="btn btn-outline btn-big"><span class="icon">💳</span> صندوق</a>
             <a href="index.html" target="_blank" class="btn btn-outline btn-big"><span class="icon">👁</span> منوی مشتری</a>
           </div>
           <p class="text-muted mt-2">«طراحی منو» همان اپ کامل است: منو، سفارش‌ها، میزها، گزارش‌ها و تنظیمات.</p>

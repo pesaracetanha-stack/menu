@@ -36,8 +36,8 @@ $role  = $_SESSION['tenant_role'] ?? 'admin';
 $links = [
   ['ic'=>'⚙️','t'=>'پنل مدیریت','d'=>'منو، طراحی، سفارش‌ها، مشتریان و تنظیمات','url'=>'panel-admin.php?role=admin','full'=>$base.'/panel-admin.php?role=admin'],
   ['ic'=>'🎨','t'=>'طراحی منو','d'=>'ساخت و ویرایش منو، دسته‌بندی، آیتم و تصاویر','url'=>'index.html','full'=>$base.'/index.html'],
-  ['ic'=>'💳','t'=>'صندوق','d'=>'ثبت سفارش حضوری، رسید و تسویه','url'=>'cashier.html','full'=>$base.'/cashier.html'],
-  ['ic'=>'🍳','t'=>'آشپزخانه','d'=>'صف سفارش‌های زنده و «آماده شد»','url'=>'kds.html','full'=>$base.'/kds.html'],
+  ['ic'=>'💳','t'=>'صندوق','d'=>'ثبت سفارش حضوری، رسید و تسویه','url'=>'cashier.php','full'=>$base.'/cashier.php'],
+  ['ic'=>'🍳','t'=>'آشپزخانه','d'=>'صف سفارش‌های زنده و «آماده شد»','url'=>'kds.php','full'=>$base.'/kds.php'],
   ['ic'=>'🎫','t'=>'پشتیبانی','d'=>'ارسال تیکت و پیگیری درخواست‌ها','url'=>'tickets.php','full'=>$base.'/tickets.php'],
   ['ic'=>'📢','t'=>'اعلانات','d'=>'اطلاعیه‌های تیم GitiArts','url'=>'announcements.php','full'=>$base.'/announcements.php'],
   ['ic'=>'💳','t'=>'تمدید اشتراک','d'=>'تمدید یا ارتقای پلن','url'=>'renew.php','full'=>$base.'/renew.php'],
