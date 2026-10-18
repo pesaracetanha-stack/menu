@@ -47,10 +47,10 @@ function render(){
   /* v5.0.4-test.5: متن تایپ‌شدهٔ «کد تخفیف» بین رندرهای زنده گم نشود */
   const pi = $('#promo-inp');
   if (pi) App.cst.promoDraft = pi.value;
-  const isAdmin = sessionStorage.getItem('tenAdmin') === '1';
+  const isAdmin = window.__DESIGN_MODE__ === true;
 
   // اگر کاربر ادمین نیست، همواره نمای مشتری را نمایش بده
-  if(!isAdmin && App.role !== 'wizard'){
+  if(!isAdmin && App.role !== 'wizard' && App.role !== 'cashier' && App.role !== 'kds'){
     App.role = 'customer';
     r.innerHTML = customerHTML();
   }
@@ -150,25 +150,25 @@ const ui = {
   return;
  }
 
- const isAdmin = sessionStorage.getItem('tenAdmin') === '1';
+ const isAdmin = window.__DESIGN_MODE__ === true;
 
  const qs = new URLSearchParams(location.search);
  const qt = parseInt(qs.get('table'), 10);
  const rp = qs.get('role');
  /* v5.0.1: نقش از نام صفحه — cashier.php / kds.php همان اپ کامل با نقش آماده‌اند */
  const page = (location.pathname.match(/(cashier|kds)\.(html|php)$/) || [])[1] || null;
-
- if(qt && (Store.db.tables || []).some(t => t.no === qt)){
+ /* FIX_V2: نام صفحه (cashier/kds) بالاترین اولویت را دارد */
+ if(page === 'cashier' || rp === 'cashier') {
+   App.role = 'cashier';
+ } else if((page === 'kds' || rp === 'kds') && SET().kds) {
+   App.role = 'kds';
+ } else if(qt && (Store.db.tables || []).some(t => t.no === qt)){
    App.role = 'customer';
    App.cst.tableNo = qt;
  } else if(!isAdmin) {
    App.role = 'customer';
  } else if(Store.db && Store.db.setup && !Store.db.setup.done) {
    App.role = 'wizard';
- } else if(page === 'cashier' || rp === 'cashier') {
-   App.role = 'cashier';
- } else if((page === 'kds' || rp === 'kds') && SET().kds) {
-   App.role = 'kds';
  } else {
    App.role = 'admin';
  }
@@ -279,7 +279,7 @@ window.addEventListener('error', e => {
 setInterval(async () => {
  if(!window.Store || !Store.db || !window.App || App.role === 'admin' || App.role === 'wizard') return;
  try{
-  const isAdmin = sessionStorage.getItem('tenAdmin') === '1';
+  const isAdmin = window.__DESIGN_MODE__ === true;
   const s = isAdmin ? await Api.get('state') : await Api.get('menu');
   if(!s) return;
   if(isAdmin){

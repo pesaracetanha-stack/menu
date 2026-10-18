@@ -1,15 +1,15 @@
 {
-    "nextId": 2,
+    "nextId": 3,
     "tenants": [
         {
-            "id": 1,
-            "slug": "bil",
-            "name": "bil",
-            "phone": "09121324567",
+            "id": 2,
+            "slug": "cafetest",
+            "name": "کافه تست",
+            "phone": "09120000000",
             "active": true,
-            "created": 1792304341192,
+            "created": 1792311690139,
             "domain": "",
-            "license": "SARU-8C1CACC8"
+            "license": "SARU-B2DB4D33"
         }
     ]
 }

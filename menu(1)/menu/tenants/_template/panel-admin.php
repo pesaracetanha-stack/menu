@@ -149,7 +149,7 @@ tr:hover td { background: var(--bg-surface-hover); }
       <li class="nav-item active" onclick="showView('dashboard', this)">
         <span class="icon">📊</span> داشبورد
       </li>
-      <li class="nav-item" onclick="window.location.href='index.html'">
+      <li class="nav-item" onclick="window.location.href='design.php'">
         <span class="icon">🎨</span> طراحی منو
       </li>
       <li class="nav-item" onclick="window.location.href='cashier.php'">
@@ -222,7 +222,7 @@ tr:hover td { background: var(--bg-surface-hover); }
         <div class="card">
           <div class="card-header"><div class="card-title">🛠 دسترسی سریع</div></div>
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
-            <a href="index.html" class="btn btn-primary btn-big"><span class="icon">🎨</span> طراحی منو</a>
+            <a href="design.php" class="btn btn-primary btn-big"><span class="icon">🎨</span> طراحی منو</a>
             <a href="kds.php" class="btn btn-outline btn-big"><span class="icon">🍳</span> آشپزخانه</a>
             <a href="cashier.php" class="btn btn-outline btn-big"><span class="icon">💳</span> صندوق</a>
             <a href="index.html" target="_blank" class="btn btn-outline btn-big"><span class="icon">👁</span> منوی مشتری</a>

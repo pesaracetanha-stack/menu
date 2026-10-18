@@ -35,7 +35,7 @@ $role  = $_SESSION['tenant_role'] ?? 'admin';
 
 $links = [
   ['ic'=>'⚙️','t'=>'پنل مدیریت','d'=>'منو، طراحی، سفارش‌ها، مشتریان و تنظیمات','url'=>'panel-admin.php?role=admin','full'=>$base.'/panel-admin.php?role=admin'],
-  ['ic'=>'🎨','t'=>'طراحی منو','d'=>'ساخت و ویرایش منو، دسته‌بندی، آیتم و تصاویر','url'=>'index.html','full'=>$base.'/index.html'],
+  ['ic'=>'🎨','t'=>'طراحی منو','d'=>'ساخت و ویرایش منو، دسته‌بندی، آیتم و تصاویر','url'=>'design.php','full'=>$base.'/design.php'],
   ['ic'=>'💳','t'=>'صندوق','d'=>'ثبت سفارش حضوری، رسید و تسویه','url'=>'cashier.php','full'=>$base.'/cashier.php'],
   ['ic'=>'🍳','t'=>'آشپزخانه','d'=>'صف سفارش‌های زنده و «آماده شد»','url'=>'kds.php','full'=>$base.'/kds.php'],
   ['ic'=>'🎫','t'=>'پشتیبانی','d'=>'ارسال تیکت و پیگیری درخواست‌ها','url'=>'tickets.php','full'=>$base.'/tickets.php'],
@@ -87,7 +87,7 @@ try {
     }
   }
 } catch (Throwable $e) { $__tkUnread = 0; }
-if ($isStaff) $links = array_values(array_filter($links, fn($l) => !in_array($l['url'], ['panel-admin.php?role=admin','index.html'], true)));
+if ($isStaff) $links = array_values(array_filter($links, fn($l) => !in_array($l['url'], ['panel-admin.php?role=admin','design.php','index.html'], true)));
 $faNum = fn($n) => str_replace(array_map('strval', range(0,9)), ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'], (string)$n);
 
 /* FIX_BANNER_BTN_V1 */ /* FIX_BANNER_ORDER_V1: بنر هشدار انقضا (بعد از faNum) */
@@ -244,7 +244,7 @@ body { font-family: var(--font-family); background: var(--bg-canvas); color: var
 
       <?php /* SETUP_CHECKLIST_V1 */
         $__cl = [
-          ['t' => 'افزودن اولین دسته‌بندی منو', 'u' => 'index.html',                              'd' => !empty($db['menu']['cats'] ?? [])],
+          ['t' => 'افزودن اولین دسته‌بندی منو', 'u' => 'design.php',                              'd' => !empty($db['menu']['cats'] ?? [])],
           ['t' => 'تنظیم ساعت کاری کافه',        'u' => 'panel-admin.php?role=admin&tab=brand', 'd' => !empty((string)($db['menu']['brand']['hours']   ?? ''))],
           ['t' => 'افزودن آدرس کافه',            'u' => 'panel-admin.php?role=admin&tab=brand', 'd' => !empty((string)($db['menu']['brand']['address'] ?? ''))],
           ['t' => 'بارگذاری لوگو',               'u' => 'panel-admin.php?role=admin&tab=brand', 'd' => !empty((string)($db['menu']['brand']['logo']    ?? ''))],
