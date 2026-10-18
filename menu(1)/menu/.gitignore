@@ -61,3 +61,12 @@ tenants.json.bak.*
 *.bak.plans.*
 *.bak.plans.*
 *.bak.plans.*
+
+# Backups & Temp Files
+*.bak.*
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+tenants/*/data/*
+!tenants/_template/data/.gitkeep

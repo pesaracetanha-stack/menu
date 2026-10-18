@@ -49,7 +49,7 @@ $isAdmin = (($_SESSION['tenant_role'] ?? 'admin') === 'admin');
   }
 </style>
 </head>
-<body>
+<body class="pos-mode">
 <div id="errbox"></div>
 <div id="app"></div>
 <div id="toasts"></div>

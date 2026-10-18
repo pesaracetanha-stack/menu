@@ -5,10 +5,12 @@
 
 function cashierHTML(){
  const t=App.csh.tab;
- const tabs=`<button class="atab ${t==='orders'?'on':''}" data-act="csh-tab" data-tab="orders">${ic('package',15)} سفارش‌ها</button>
-  <button class="atab ${t==='tables'?'on':''}" data-act="csh-tab" data-tab="tables">${ic('table',15)} میزها</button>
-  <button class="atab ${t==='invoices'?'on':''}" data-act="csh-tab" data-tab="invoices">${ic('send',15)} فاکتورها</button>`;
- return appbar('صندوق',M().brand.name,tabs)+(t==='orders'?cashOrdersHTML():t==='tables'?cashTablesHTML():cashInvoicesHTML());
+ const tabs=`<div class="pos-tabs">
+  <button class="pos-tab ${t==='orders'?'on':''}" data-act="csh-tab" data-tab="orders">${ic('package',18)} سفارش‌ها</button>
+  <button class="pos-tab ${t==='tables'?'on':''}" data-act="csh-tab" data-tab="tables">${ic('table',18)} میزها</button>
+  <button class="pos-tab ${t==='invoices'?'on':''}" data-act="csh-tab" data-tab="invoices">${ic('send',18)} فاکتورها</button>
+ </div>`;
+ return appbar('صندوق',M().brand.name,'')+`<div class="pos-container">${tabs}${t==='orders'?cashOrdersHTML():t==='tables'?cashTablesHTML():cashInvoicesHTML()}</div>`;
 }
 function shiftBarHTML(){
  const sh=Store.db.shift;
@@ -32,14 +34,15 @@ function shiftReport(){
   <p class="mini" style="margin-top:8px">«بستن شیفت» این اعداد را نهایی می‌کند و صندوق برای شیفت بعد آماده می‌شود.</p>`;
 }
 function cashOrdersHTML(){
- return `<div class="cwrap-c">${shiftBarHTML()}
-  <div class="csh-tools">
-   <div class="seg">
-    <button class="${App.csh.f==='open'?'on':''}" data-act="csh-filter" data-f="open">جاری</button>
-    <button class="${App.csh.f==='today'?'on':''}" data-act="csh-filter" data-f="today">امروز</button>
-    <button class="${App.csh.f==='all'?'on':''}" data-act="csh-filter" data-f="all">همه</button></div>
-   <button class="btn sm" data-act="walkin" style="margin-inline-start:auto">${ic('plus',14)} فروش حضوری</button></div>
-  <div id="csh-orders">${ordersListHTML()}</div></div>`;
+ return `<div class="pos-header-tools">
+  <div class="pos-seg">
+   <button class="${App.csh.f==='open'?'on':''}" data-act="csh-filter" data-f="open">جاری</button>
+   <button class="${App.csh.f==='today'?'on':''}" data-act="csh-filter" data-f="today">امروز</button>
+   <button class="${App.csh.f==='all'?'on':''}" data-act="csh-filter" data-f="all">همه</button>
+  </div>
+  <button class="btn sm" data-act="walkin" style="margin-inline-start:auto; background:#B4531F; border:0; color:#fff; padding:10px 16px; border-radius:8px; font-weight:800;">${ic('plus',16)} فروش حضوری</button>
+ </div>
+ <div id="csh-orders">${ordersListHTML()}</div>`;
 }
 function ordersListHTML(){
  const f=App.csh.f;
@@ -47,25 +50,29 @@ function ordersListHTML(){
  if(f==='open')os=os.filter(o=>o.status!=='done');
  if(f==='today')os=os.filter(o=>o.ts>=sod(Date.now()));
  os=os.slice(0,40);
- if(!os.length)return `<div class="empty-big">${ic('package',34)}<p>سفارشی در این فهرست نیست</p><small>سفارش‌های آنلاین مشتری‌ها همین‌جا، زنده ظاهر می‌شوند.</small></div>`;
+ if(!os.length)return `<div class="empty-big">${ic('package',48)}<p>سفارشی در این فهرست نیست</p><small>سفارش‌های آنلاین مشتری‌ها همین‌جا، زنده ظاهر می‌شوند.</small></div>`;
  const kds=SET().kds;
- return os.map(o=>{
+ return `<div class="pos-grid">` + os.map(o=>{
   const st=ST[o.status]||ST.pending;
-  const pill=o.status==='preparing'?((o.ready&&kds)?`<span class="pill ok">آمادهٔ تحویل</span>`:`<span class="pill info">${kds?'در حال آماده‌سازی':'در حال انجام'}</span>`):`<span class="pill ${st.c}">${st.t}</span>`;
-  return `<div class="ord ${o.status==='pending'?'urgn':''}">
-   <div class="ord-h"><b class="ord-no">#${fa(o.num)}</b>
-    <span class="ord-meta">${tf.format(o.ts)}${o.cashier?' · '+esc(o.cashier):''}${o.tableNo?' · میز '+fa(o.tableNo):''}${o.custNo?' · کارت '+fa(o.custNo):''}</span>${pill}</div>
-   <ul class="ord-it">${o.items.map(i=>`<li><b>${fa(i.qty)}×</b>${esc(i.name)}${(i.opts&&i.opts.length)?` <small class="dim">(${esc(i.opts.map(x=>x.name).join('، '))})</small>`:''}</li>`).join('')}</ul>
-   ${o.loc?`<div class="ord-loc">${ic('pin',12)} لوکیشن: ${esc(o.loc)}</div>`:''}
-   ${o.tipNote?`<div class="ord-tip">${ic('gift',12)} انعام ${(o.tip?faM(o.tip):'')+' تومان'} · توضیح: ${esc(o.tipNote)}</div>`:''}
-   <div class="ord-f"><div><b>${faM(o.total)}</b> <small>تومان · ${methodLabel(o.method)}</small>${o.method==='online'?` <span class="tagpill ok">${ic('check',11)} پرداخت آنلاین تأیید شد</span>`:''}</div>
-   <div class="ord-ops">
-    ${o.status==='pending'&&o.method==='counter'?`<button class="btn sm" data-act="take-pay" data-id="${o.id}">${ic('cash',14)} دریافت وجه</button>`:''}
-    ${o.status==='preparing'?`<button class="btn sm" data-act="deliver" data-id="${o.id}">${ic('check',14)} تحویل شد</button>`:''}
-    ${o.status!=='pending'?`<button class="icobtn" data-act="split-open" data-id="${o.id}" title="تقسیم حساب">${ic('split',16)}</button>`:''}
-    <button class="icobtn" data-act="receipt" data-id="${o.id}" title="پرینت رسید">${ic('printer',16)}</button>
-    <button class="icobtn" data-act="invoice" data-id="${o.id}" title="ارسال فاکتور">${ic('send',16)}</button></div></div></div>`;
- }).join('');
+  const pill=o.status==='preparing'?((o.ready&&kds)?`<span class="pos-pill ok">آمادهٔ تحویل</span>`:`<span class="pos-pill info">${kds?'در حال آماده‌سازی':'در حال انجام'}</span>`):`<span class="pos-pill ${st.c}">${st.t}</span>`;
+  return `<div class="pos-card ${o.status==='pending'?'urgent':''}">
+   <div class="pos-card-h">
+    <b class="pos-no">#${fa(o.num)}</b>
+    ${pill}
+   </div>
+   <div class="pos-meta">${tf.format(o.ts)}${o.cashier?' · '+esc(o.cashier):''}${o.tableNo?' · میز '+fa(o.tableNo):''}${o.custNo?' · کارت '+fa(o.custNo):''}</div>
+   <ul class="pos-items">${o.items.map(i=>`<li><b>${fa(i.qty)}×</b> <span>${esc(i.name)}</span>${(i.opts&&i.opts.length)?`<small>(${esc(i.opts.map(x=>x.name).join('، '))})</small>`:''}</li>`).join('')}</ul>
+   ${o.loc?`<div class="pos-note">${ic('pin',14)} ${esc(o.loc)}</div>`:''}
+   <div class="pos-card-f">
+    <div class="pos-total">${faM(o.total)} <small>تومان</small></div>
+    <div class="pos-actions">
+     ${o.status==='pending'&&o.method==='counter'?`<button class="btn sm" data-act="take-pay" data-id="${o.id}">${ic('cash',14)} دریافت</button>`:''}
+     ${o.status==='preparing'?`<button class="btn sm" data-act="deliver" data-id="${o.id}">${ic('check',14)} تحویل</button>`:''}
+     <button class="icobtn" data-act="receipt" data-id="${o.id}" title="رسید">${ic('printer',16)}</button>
+    </div>
+   </div>
+  </div>`;
+ }).join('') + `</div>`;
 }
 function cashTablesHTML(){
  const ts=Store.db.tables;
@@ -118,16 +125,19 @@ function kdsHTML(){
 function kdsListHTML(){
  const prep=Store.db.orders.filter(o=>o.status==='preparing').sort((a,b)=>(a.kts||a.ts)-(b.kts||b.ts));
  const cook=prep.filter(o=>!o.ready),ready=prep.filter(o=>o.ready);
- if(!prep.length)return `<div class="empty-big">${ic('chefhat',34)}<p>سفارشی در آشپزخانه نیست</p><small>سفارش‌های پرداخت‌شده همین‌جا، زنده ظاهر می‌شوند.</small></div>`;
+ if(!prep.length)return `<div class="empty-big dark">${ic('chefhat',48)}<p>سفارشی در آشپزخانه نیست</p><small>سفارش‌های جدید همین‌جا ظاهر می‌شوند.</small></div>`;
  const card=o=>{
   const late=!o.ready&&(Date.now()-(o.kts||o.ts))>10*60000;
-  return `<div class="kd-card ${o.ready?'ready':''}">
-   <div class="kd-top"><b class="kd-no">#${fa(o.num)}${o.tableNo?' · میز '+fa(o.tableNo):''}</b>
-    <span class="kd-time ${late?'late':''}" data-id="${o.id}">${fmtDur(Date.now()-(o.kts||o.ts))}</span></div>
-   <div class="kd-items">${o.items.map(i=>`<div><b>${fa(i.qty)}×</b> ${esc(i.name)}${(i.opts&&i.opts.length)?` <small>(${esc(i.opts.map(x=>x.name).join('، '))})</small>`:''}</div>`).join('')}</div>
-   ${o.ready?`<p class="mini">منتظر تحویل توسط صندوق…</p>`
-    :`<button class="btn sm blk" data-act="kds-ready" data-id="${o.id}">${ic('check',13)} آماده شد</button>`}</div>`;
+  return `<div class="kds-card ${o.ready?'ready':''} ${late?'late':''}">
+   <div class="kds-top">
+    <b class="kds-no">#${fa(o.num)}${o.tableNo?' · میز '+fa(o.tableNo):''}</b>
+    <span class="kds-time ${late?'urgent':''}" data-id="${o.id}">${fmtDur(Date.now()-(o.kts||o.ts))}</span>
+   </div>
+   <div class="kds-items">${o.items.map(i=>`<div><b>${fa(i.qty)}×</b> ${esc(i.name)}${(i.opts&&i.opts.length)?` <small>(${esc(i.opts.map(x=>x.name).join('، '))})</small>`:''}</div>`).join('')}</div>
+   ${o.ready?`<button class="btn kds-btn ready" disabled>${ic('check',16)} منتظر تحویل</button>`
+    :`<button class="btn kds-btn" data-act="kds-ready" data-id="${o.id}">${ic('check',16)} آماده شد</button>`}
+  </div>`;
  };
- return `${cook.length?`<div class="kd-h">${ic('flame',15)} در حال آماده‌سازی (${fa(cook.length)})</div><div class="kd-grid">${cook.map(card).join('')}</div>`:''}
-  ${ready.length?`<div class="kd-h">${ic('check',15)} آماده — در انتظار تحویل (${fa(ready.length)})</div><div class="kd-grid">${ready.map(card).join('')}</div>`:''}`;
+ return `${cook.length?`<div class="kds-section-title">${ic('flame',20)} در حال آماده‌سازی (${fa(cook.length)})</div><div class="kds-grid">${cook.map(card).join('')}</div>`:''}
+  ${ready.length?`<div class="kds-section-title green">${ic('check',20)} آماده — در انتظار تحویل (${fa(ready.length)})</div><div class="kds-grid">${ready.map(card).join('')}</div>`:''}`;
 }
