@@ -1,4 +1,15 @@
 {
-    "nextId": 1,
-    "tenants": []
+    "nextId": 2,
+    "tenants": [
+        {
+            "id": 1,
+            "slug": "bil",
+            "name": "bil",
+            "phone": "09121324567",
+            "active": true,
+            "created": 1792304341192,
+            "domain": "",
+            "license": "SARU-8C1CACC8"
+        }
+    ]
 }

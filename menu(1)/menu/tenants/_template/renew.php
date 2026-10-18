@@ -20,10 +20,11 @@ if (empty($_SESSION['csrf'])) {
 
 $root = dirname(__DIR__, 2);
 require_once $root . '/api/lib/zarinpal.php';
+require_once $root . '/api/lib/paths.php';
 
 /* کانفیگ پلتفرم */
 $cfg = require $root . '/config.php';
-$plans = $cfg['plans'] ?? [];
+$plans = giti_get_plans();
 $zp = $cfg['zarinpal'] ?? [];
 $zpEnabled = !empty($zp['enabled']);
 

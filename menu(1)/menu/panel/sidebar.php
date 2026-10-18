@@ -28,6 +28,10 @@ if (is_file($__tkFile)) {
       <span class="icon">🔒</span> امنیت و لاگ‌ها
     </li>
     
+    <li class="nav-item <?= ($_GET['view'] ?? '') === 'plans' ? 'active' : '' ?>" onclick="window.location.href='panel.php?view=plans'">
+      <span class="icon">💰</span> پلن‌ها و قیمت‌ها
+    </li>
+
     <div class="nav-divider"></div>
     
     <li class="nav-item <?= basename($_SERVER['PHP_SELF']) == 'tickets.php' ? 'active' : '' ?>" onclick="window.location.href='tickets.php'">

@@ -30,7 +30,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        $ok = 'لایسنس فعال شد'; plat_log('activate', ['slug' => $_POST['slug'] ?? '', 'days' => (int)($_POST['days'] ?? 365)]); break;
       case 'setplan': plat_set_plan($_POST['slug'] ?? '', $_POST['plan'] ?? 'free');
                     $ok = 'پلن تغییر کرد'; plat_log('setplan', ['slug' => $_POST['slug'] ?? '', 'plan' => $_POST['plan'] ?? '']); break;
-      case 'suspend':  plat_suspend($_POST['slug'] ?? ''); $ok = 'کافه غیرفعال شد'; plat_log('suspend', ['slug' => $_POST['slug'] ?? '']); break;
+      case 'save_plans':
+        $incoming = $_POST['plans'] ?? [];
+        if (!is_array($incoming)) { $msg = 'داده نامعتبر'; break; }
+        $allowed = ['free', 'basic', 'pro'];
+        $clean = [];
+        foreach ($allowed as $k) {
+          if (!isset($incoming[$k]) || !is_array($incoming[$k])) continue;
+          $clean[$k] = [
+            'name_fa'          => trim((string)($incoming[$k]['name_fa'] ?? '')),
+            'price_toman'      => max(0, (int)($incoming[$k]['price_toman'] ?? 0)),
+            'max_users'        => max(0, (int)($incoming[$k]['max_users'] ?? 0)),
+            'sms_enabled'      => !empty($incoming[$k]['sms_enabled']),
+            'max_menu_items'   => max(0, (int)($incoming[$k]['max_menu_items'] ?? 0)),
+            'max_orders_month' => max(0, (int)($incoming[$k]['max_orders_month'] ?? 0)),
+          ];
+        }
+        $pFile = __DIR__ . '/../data/plans.json';
+        $existing = is_file($pFile) ? json_decode((string)file_get_contents($pFile), true) : [];
+        if (!is_array($existing)) $existing = [];
+        $existing['plans'] = array_merge($existing['plans'] ?? [], $clean);
+        $existing['updated_at'] = (int)(microtime(true) * 1000);
+        if (file_put_contents($pFile, json_encode($existing, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n") === false) {
+          $msg = 'خطا در ذخیره plans.json'; break;
+        }
+        $ok = '✅ قیمت‌ها و پلن‌ها ذخیره شد';
+        plat_log('save_plans', ['keys' => array_keys($clean)]);
+        break;      case 'suspend':  plat_suspend($_POST['slug'] ?? ''); $ok = 'کافه غیرفعال شد'; plat_log('suspend', ['slug' => $_POST['slug'] ?? '']); break;
       case 'resetpass': $tmpPass = plat_reset_pass($_POST['slug'] ?? '');
                         $ok = 'رمز موقت مدیر کافه ساخته شد'; plat_log('resetpass', ['slug' => $_POST['slug'] ?? '']); break;
       case 'resetuser': $tmpPass = plat_reset_user($_POST['slug'] ?? '', $_POST['uid'] ?? '');
@@ -392,6 +418,50 @@ details[open] summary { border-bottom: 1px solid var(--border-subtle); }
         </div>
       </section>
 
+      <!-- View: Plans & Pricing -->
+      <section id="view-plans" class="view <?= $currentView === 'plans' ? 'active' : '' ?>">
+        <div class="card">
+          <div class="card-header"><div class="card-title">💰 مدیریت پلن‌ها و قیمت‌ها</div></div>
+          <p style="margin-bottom:16px;color:#7D6C54;font-size:13px">
+            تغییرات فوراً در <code>renew.php</code> اعمال می‌شود — بدون ری‌استارت. کلید پلن (free/basic/pro) قابل تغییر نیست.
+          </p>
+          <?php $__plans = giti_get_plans(); ?>
+          <form method="post">
+            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+            <input type="hidden" name="act" value="save_plans">
+            <?php foreach ($__plans as $__k => $__p): ?>
+            <div class="card" style="margin-bottom:14px;background:#FBF6EB">
+              <div style="margin-bottom:10px;font-size:15px;font-weight:700">
+                <?= htmlspecialchars($__p['name_fa'] ?? $__k) ?>
+                <code style="font-size:11px;color:#7D6C54;font-weight:400">(<?= htmlspecialchars($__k) ?>)</code>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px">
+                <label style="font-size:12px">نام فارسی
+                  <input type="text" name="plans[<?= $__k ?>][name_fa]" value="<?= htmlspecialchars($__p['name_fa'] ?? '') ?>" style="width:100%;padding:8px;border:1px solid #DFD2B6;border-radius:8px;margin-top:4px">
+                </label>
+                <label style="font-size:12px">قیمت ماهانه (تومان)
+                  <input type="number" min="0" name="plans[<?= $__k ?>][price_toman]" value="<?= (int)($__p['price_toman'] ?? 0) ?>" style="width:100%;padding:8px;border:1px solid #DFD2B6;border-radius:8px;margin-top:4px">
+                </label>
+                <label style="font-size:12px">حداکثر پرسنل (۰=نامحدود)
+                  <input type="number" min="0" name="plans[<?= $__k ?>][max_users]" value="<?= (int)($__p['max_users'] ?? 0) ?>" style="width:100%;padding:8px;border:1px solid #DFD2B6;border-radius:8px;margin-top:4px">
+                </label>
+                <label style="font-size:12px">حداکثر آیتم منو (۰=نامحدود)
+                  <input type="number" min="0" name="plans[<?= $__k ?>][max_menu_items]" value="<?= (int)($__p['max_menu_items'] ?? 0) ?>" style="width:100%;padding:8px;border:1px solid #DFD2B6;border-radius:8px;margin-top:4px">
+                </label>
+                <label style="font-size:12px">حداکثر سفارش ماهانه (۰=نامحدود)
+                  <input type="number" min="0" name="plans[<?= $__k ?>][max_orders_month]" value="<?= (int)($__p['max_orders_month'] ?? 0) ?>" style="width:100%;padding:8px;border:1px solid #DFD2B6;border-radius:8px;margin-top:4px">
+                </label>
+                <label style="font-size:12px;display:flex;align-items:center;gap:6px;padding-top:22px">
+                  <input type="checkbox" name="plans[<?= $__k ?>][sms_enabled]" value="1" <?= !empty($__p['sms_enabled']) ? 'checked' : '' ?>>
+                  پیامک فعال
+                </label>
+              </div>
+            </div>
+            <?php endforeach; ?>
+            <button type="submit" class="btn btn-primary" style="padding:10px 24px">💾 ذخیره همه پلن‌ها</button>
+          </form>
+        </div>
+      </section>
       <!-- View: Security & Logs -->
       <section id="view-security" class="view <?= $currentView === 'security' ? 'active' : '' ?>">
         <div class="card" style="max-width:500px">

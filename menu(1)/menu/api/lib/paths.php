@@ -8,6 +8,23 @@ declare(strict_types=1);
 
 function p_root(): string { return dirname(__DIR__, 2); }           // .../menu
 function p_config(): array { return require p_root() . '/config.php'; }
+
+/* giti_get_plans() — merge config.php plans with data/plans.json (if present)
+   Enables runtime price editing from admin panel without touching config.php */
+function giti_get_plans(): array {
+  $base = p_config()['plans'] ?? [];
+  $file = p_root() . '/data/plans.json';
+  if (!is_file($file)) return $base;
+  $json = @file_get_contents($file);
+  if ($json === false) return $base;
+  $data = json_decode($json, true);
+  if (!is_array($data) || !isset($data['plans']) || !is_array($data['plans'])) return $base;
+  foreach ($data['plans'] as $key => $ov) {
+    if (!isset($base[$key]) || !is_array($ov)) continue;
+    $base[$key] = array_merge($base[$key], $ov);
+  }
+  return $base;
+}
 function p_tenants_file(): string { return p_root() . '/tenants.json'; }
 
 function p_json_out(bool $ok, ?string $err = null, $data = null): void {
