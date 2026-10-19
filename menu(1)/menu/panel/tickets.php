@@ -499,7 +499,9 @@ textarea:focus{outline:none;border-color:var(--accent-500);box-shadow:0 0 0 3px 
             <div class="empty">تیکتی انتخاب کنید تا پاسخ دهید</div>
           <?php else: ?>
             <?php $s = (string)$active['slug']; $cafeName = $tenantsMap[$s] ?? $s; ?>
-            <div class="detail-head">
+            <div style="margin-bottom:16px;">
+          <a href="tickets.php" class="btn ghost" style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:10px; font-weight:700; font-size:13px; text-decoration:none; background:#fff;"><span style="font-size:16px;">‹</span> بازگشت به لیست</a>
+        </div><div class="detail-head">
               <div style="flex:1">
                 <h3>#<?= htmlspecialchars($active['tid'] ?? (string)$active['id']) ?> — <?= htmlspecialchars($active['subject']) ?></h3>
                 <div class="meta">
@@ -527,16 +529,19 @@ textarea:focus{outline:none;border-color:var(--accent-500);box-shadow:0 0 0 3px 
             </div>
 
             <?php if ($active['status'] !== 'closed'): ?>
-              <form method="post" enctype="multipart/form-data">
-                <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
-                <input type="hidden" name="act" value="reply">
-                <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
-                <textarea name="text" required maxlength="2000" placeholder="پاسخ به کافه‌دار..."></textarea>
-                <label style="margin-top:10px"><span>📎 فایل ضمیمه (اختیاری)</span>
-                  <input class="file-input" type="file" name="attach" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip">
-                </label>
-                <button class="btn" type="submit">📤 ارسال پاسخ</button>
-              </form>
+                      <form method="post" enctype="multipart/form-data" style="margin-top:16px; border-top:1px solid #EFE7D6; padding-top:16px">
+          <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+          <input type="hidden" name="act" value="reply">
+          <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
+          <div style="display:flex; gap:10px; align-items:center; background:#F9F6F0; padding:8px; border-radius:16px; border:1px solid #DFD2B6;">
+            <label style="cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px; background:#fff; border:1px solid #DFD2B6; border-radius:12px; font-size:20px; flex-shrink:0; margin:0;" title="فایل ضمیمه">
+              📎
+              <input type="file" name="attach" style="display:none" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip">
+            </label>
+            <textarea name="text" required maxlength="2000" placeholder="پاسخ به کافه‌دار..." style="flex:1; min-height:44px; max-height:120px; border:0; background:transparent; padding:10px; resize:none; outline:none; font-family:inherit; font-size:14px; margin:0;"></textarea>
+            <button class="btn" type="submit" style="padding:0 24px; border-radius:12px; height:44px; font-weight:800; font-size:14px; display:flex; align-items:center; flex-shrink:0; margin:0;">ارسال</button>
+          </div>
+        </form>
               <form method="post" style="margin-top:10px" onsubmit="return confirm('بسته شود؟')">
                 <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
                 <input type="hidden" name="act" value="close">

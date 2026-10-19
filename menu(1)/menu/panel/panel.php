@@ -6,6 +6,57 @@ require_once __DIR__ . '/../api/lib/paths.php';
 require_once __DIR__ . '/../api/lib/export-control.php';
 require_once __DIR__ . '/../api/lib/updater.php';
 require_once __DIR__ . '/../bootstrap-i18n.php';
+    // ANALYTICS_LOGIC_V1
+    $anData = [];
+    $totalOrders = 0;
+    $totalRevenue = 0;
+    $activeCafes = 0;
+    $tenantsList = p_tenants_load()['tenants'] ?? [];
+
+    if (!class_exists('GStore')) {
+        require_once __DIR__ . '/../api/lib/class-gstore.php';
+    }
+
+    foreach ($tenantsList as $t) {
+        $slug = $t['slug'];
+        $db = [];
+        try {
+            $store = GStore::for(__DIR__ . '/../tenants/' . $slug);
+            $db = $store->get();
+        } catch (Throwable $e) {}
+
+        $orders = $db['orders'] ?? [];
+        $orderCount = count($orders);
+        $revenue = 0;
+        foreach ($orders as $o) { $revenue += ($o['total'] ?? 0); }
+
+        $lic = $db['license'] ?? [];
+        $status = $lic['status'] ?? 'trial';
+        $paidUntil = (float)($lic['paid_until'] ?? $lic['expires'] ?? 0);
+        $now = round(microtime(true) * 1000);
+        $isActive = ($status === 'active' && $paidUntil > $now) || ($status === 'trial' && $paidUntil > $now);
+
+        if ($isActive) $activeCafes++;
+        $totalOrders += $orderCount;
+        $totalRevenue += $revenue;
+
+        $score = 'New';
+        if ($orderCount > 200) $score = '🥇 Gold';
+        elseif ($orderCount > 50) $score = '🥈 Silver';
+        elseif ($orderCount > 0) $score = '🥉 Bronze';
+
+        $anData[] = [
+            'name' => $t['name'] ?? $slug,
+            'slug' => $slug,
+            'plan' => $lic['plan'] ?? 'free',
+            'active' => $isActive,
+            'orders' => $orderCount,
+            'revenue' => $revenue,
+            'score' => $score
+        ];
+    }
+    usort($anData, fn($a, $b) => $b['revenue'] <=> $a['revenue']);
+    // END_ANALYTICS_LOGIC_V1
 sec_session();
 pauth_require();
 
@@ -499,6 +550,65 @@ details[open] summary { border-bottom: 1px solid var(--border-subtle); }
             </label>
             <button type="submit" class="btn btn-primary" style="padding:10px 24px">💾 ذخیره تنظیمات</button>
           </form>
+        </div>
+      </section>
+      <!-- View: Analytics -->
+      <section id="view-analytics" class="view <?= $currentView === 'analytics' ? 'active' : '' ?>">
+        <h2 style="margin-bottom:20px;font-size:20px;font-weight:800">📈 تحلیل و آمار پلتفرم</h2>
+        
+        <div class="grid-stats" style="grid-template-columns:repeat(auto-fit, minmax(200px, 1fr))">
+            <div class="stat-box">
+                <div class="value"><?= fa((string)count($tenantsList)) ?></div>
+                <div class="label">کل کافه‌ها</div>
+            </div>
+            <div class="stat-box">
+                <div class="value" style="color:#4F7A3D"><?= fa((string)$activeCafes) ?></div>
+                <div class="label">کافه‌های فعال</div>
+            </div>
+            <div class="stat-box">
+                <div class="value"><?= fa((string)$totalOrders) ?></div>
+                <div class="label">کل سفارشات</div>
+            </div>
+            <div class="stat-box">
+                <div class="value" style="color:#B4531F"><?= fa(number_format((float)$totalRevenue)) ?></div>
+                <div class="label">کل گردش مالی (تومان)</div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:24px; padding:0; overflow:hidden;">
+            <div class="card-header" style="padding:20px; margin:0; background:#FBF6EB;">
+                <div class="card-title">🏆 رتبه‌بندی کافه‌ها (بر اساس درآمد)</div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; text-align:right; font-size:14px;">
+                    <thead style="background:#F4F1EA; color:#7D6C54;">
+                        <tr>
+                            <th style="padding:12px 20px; font-weight:700">کافه</th>
+                            <th style="padding:12px 20px; font-weight:700">پلن</th>
+                            <th style="padding:12px 20px; font-weight:700">وضعیت</th>
+                            <th style="padding:12px 20px; font-weight:700">تعداد سفارش</th>
+                            <th style="padding:12px 20px; font-weight:700">درآمد کل</th>
+                            <th style="padding:12px 20px; font-weight:700">امتیاز</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if(empty($anData)): ?>
+                        <tr><td colspan="6" style="padding:20px; text-align:center; color:#7D6C54">هنوز هیچ کافه‌ای سفارشی ثبت نکرده است.</td></tr>
+                        <?php else: foreach($anData as $a): ?>
+                        <tr style="border-bottom:1px solid #EFE7D6;">
+                            <td style="padding:12px 20px;"><b><?= htmlspecialchars($a['name']) ?></b><br><small dir="ltr" style="color:#7D6C54"><?= htmlspecialchars($a['slug']) ?></small></td>
+                            <td style="padding:12px 20px;"><?= $a['plan'] === 'pro' ? '👑 حرفه‌ای' : ($a['plan'] === 'basic' ? '⚡ پایه' : '🌱 رایگان') ?></td>
+                            <td style="padding:12px 20px;">
+                                <?= $a['active'] ? '<span style="color:#4F7A3D;font-weight:700">فعال</span>' : '<span style="color:#D32F2F;font-weight:700">منقضی</span>' ?>
+                            </td>
+                            <td style="padding:12px 20px;"><?= fa((string)$a['orders']) ?></td>
+                            <td style="padding:12px 20px;"><b><?= fa(number_format((float)$a['revenue'])) ?></b> <small>تومان</small></td>
+                            <td style="padding:12px 20px;"><span style="display:inline-block; padding:4px 8px; border-radius:8px; background:#F4F1EA; font-size:12px; font-weight:800"><?= $a['score'] ?></span></td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
       </section>
       <!-- View: Security & Logs -->

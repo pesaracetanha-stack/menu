@@ -36,6 +36,10 @@ if (is_file($__tkFile)) {
       <span class="icon">📱</span> تنظیمات پیامک
     </li>
 
+    <li class="nav-item <?= ($_GET['view'] ?? '') === 'analytics' ? 'active' : '' ?>" onclick="window.location.href='panel.php?view=analytics'">
+      <span class="icon">📈</span> تحلیل و آمار
+    </li>
+
     <div class="nav-divider"></div>
     
     <li class="nav-item <?= basename($_SERVER['PHP_SELF']) == 'tickets.php' ? 'active' : '' ?>" onclick="window.location.href='tickets.php'">

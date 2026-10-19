@@ -186,7 +186,7 @@ function ticket_reply(array $in): array {
     if ((int)$t['id'] !== $id) continue;
     if (!$isAdmin && ($t['slug'] ?? '') !== $slug) throw new Exception('دسترسی ندارید');
 
-    if (($t['status'] ?? '') === 'closed') throw new Exception('این تیکت بسته شده است');
+    // اجازه پاسخ به تیکت بسته و باز کردن مجدد آن
 
     $author = $isAdmin ? 'پشتیبانی' : (string)($_SESSION['tenant_user'] ?? 'کاربر');
     $from   = $isAdmin ? 'admin' : 'cafe';

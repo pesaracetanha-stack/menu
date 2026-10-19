@@ -279,7 +279,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           foreach ($d['tickets'] as $i => $t) {
             if ((int)$t['id'] !== $id) continue;
             if (($t['slug'] ?? '') !== $slug) { $err = 'دسترسی'; return $d; }
-            if (($t['status'] ?? '') === 'closed') { $err = 'تیکت بسته است'; return $d; }
+            // پاسخ به تیکت بسته مجاز است (تیکت باز می‌شود)
             $m = ['from'=>'cafe','author'=>$user,'text'=>$text,'ts'=>time()];
             if ($fileData) $m['file'] = $fileData;
             $d['tickets'][$i]['messages'][] = $m;
@@ -464,6 +464,29 @@ label span{display:block;margin-bottom:5px;font-weight:700;font-size:13px;color:
 .btn.danger{background:var(--danger-500)}
 
 /* ── Categories ── */
+/* MODERN_CHAT_UI_V2 */
+.main-content { height: 100vh; overflow: hidden; display: flex; flex-direction: column; background: #F4F1EA !important; }
+.content-area { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; flex: 1; }
+.topbar { background: #fff !important; border-bottom: 1px solid #EFE7D6 !important; }
+.chat-wrapper { display: flex; flex-direction: column; height: 100%; background: #F4F1EA; }
+.chat-header { background: #FBF6EB; border-bottom: 1px solid #EFE7D6; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.chat-header-left { display: flex; align-items: center; gap: 16px; }
+.btn-back { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 1px solid #DFD2B6; color: #271D12; text-decoration: none; transition: 0.2s; font-size: 18px; }
+.btn-back:hover { background: #EFE7D6; }
+.chat-title { font-size: 16px; font-weight: 800; color: #271D12; margin-bottom: 4px; }
+.chat-meta { font-size: 12px; color: #7D6C54; }
+.chat-body { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.chat-footer { background: #fff; border-top: 1px solid #EFE7D6; padding: 16px 24px; flex-shrink: 0; }
+.msgs { display: flex; flex-direction: column; gap: 12px; margin-bottom: 0 !important; padding: 0 !important; }
+.msg-row { max-width: 75%; padding: 14px 18px; border-radius: 18px; position: relative; font-size: 14px; line-height: 1.6; box-shadow: 0 2px 6px rgba(0,0,0,0.03); margin-bottom: 0 !important; }
+.msg-row.cafe { background: #fff; color: #271D12; margin-left: auto; border-bottom-left-radius: 4px; border: 1px solid #EFE7D6; }
+.msg-row.admin { background: #B4531F; color: #fff; margin-right: auto; border-bottom-right-radius: 4px; }
+.msg-row .who { font-size: 11px; margin-bottom: 6px; font-weight: 800; opacity: 0.8; }
+.msg-row .when { font-size: 10px; margin-top: 8px; opacity: 0.7; text-align: left; }
+.reply-box { display: flex; gap: 12px; align-items: flex-end; }
+.reply-box textarea { flex: 1; min-height: 50px; max-height: 150px; border-radius: 12px; padding: 12px 16px; border: 1px solid #DFD2B6; resize: none; font-family: inherit; font-size: 14px; }
+.reply-actions { display: flex; flex-direction: column; gap: 8px; }
+.file-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #7D6C54; cursor: pointer; }
 .cat-tab{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:20px;text-decoration:none;color:var(--text-primary);font-size:12px;font-weight:700;transition:.15s;font-family:inherit}
 .cat-tab:hover{background:var(--bg-surface-hover);border-color:var(--accent-500)}
 .cat-tab.on{background:var(--accent-500);color:#fff;border-color:var(--accent-500)}
@@ -537,15 +560,16 @@ label span{display:block;margin-bottom:5px;font-weight:700;font-size:13px;color:
         </div>
 
         <!-- New Ticket Form -->
+                <!-- New Ticket Form -->
         <div class="card">
           <h2 style="font-size:16px; font-weight:800; margin-bottom:16px; border-bottom:1px dashed var(--border-subtle); padding-bottom:12px">✏️ ثبت تیکت جدید</h2>
-          <form method="post" enctype="multipart/form-data">
+          <form method="post" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:12px;">
             <input type="hidden" name="act" value="new">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
-            <label style="display:block; margin-bottom:12px"><span>موضوع</span>
+            <label style="display:block"><span>موضوع</span>
               <input type="text" name="subject" required maxlength="120" placeholder="مثلاً: مشکل در چاپ فاکتور">
             </label>
-            <label style="display:block; margin-bottom:12px"><span>دسته‌بندی</span>
+            <label style="display:block"><span>دسته‌بندی</span>
               <select name="category">
                 <option value="technical">🔧 فنی</option>
                 <option value="billing">💰 مالی / اشتراک</option>
@@ -553,13 +577,13 @@ label span{display:block;margin-bottom:5px;font-weight:700;font-size:13px;color:
                 <option value="general">📝 عمومی</option>
               </select>
             </label>
-            <label style="display:block; margin-bottom:12px"><span>توضیحات</span>
+            <label style="display:block"><span>توضیحات</span>
               <textarea name="body" required maxlength="2000" placeholder="مشکل یا درخواست خود را کامل توضیح دهید..."></textarea>
             </label>
-            <label style="display:block; margin-bottom:16px"><span>📎 فایل ضمیمه (اختیاری — حداکثر ۵ مگابایت)</span>
+            <label style="display:block"><span>📎 فایل ضمیمه (اختیاری)</span>
               <input class="file-input" type="file" name="attach" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip">
             </label>
-            <button class="btn" type="submit">📤 ارسال تیکت</button>
+            <button class="btn" type="submit" style="align-self:flex-start; padding:10px 24px;">📤 ارسال تیکت</button>
           </form>
         </div>
 
@@ -593,18 +617,18 @@ label span{display:block;margin-bottom:5px;font-weight:700;font-size:13px;color:
             <?php endforeach; ?>
           </div>
 
-          <?php if ($active['status'] !== 'closed'): ?>
+                      <?php if (true): // همیشه نمایش داده شود ?>
             <form method="post" enctype="multipart/form-data" style="margin-top:16px; border-top:1px solid var(--border-subtle); padding-top:16px">
               <input type="hidden" name="act" value="reply">
               <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf']) ?>">
               <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
-              <textarea name="text" required maxlength="2000" placeholder="پاسخ خود را بنویسید..."></textarea>
-              <label style="margin-top:10px; display:block"><span>📎 فایل ضمیمه (اختیاری)</span>
-                <input class="file-input" type="file" name="attach" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip">
-              </label>
-              <div style="display:flex;gap:8px;flex-wrap:wrap; margin-top:12px">
-                <button class="btn" type="submit">📤 ارسال پاسخ</button>
-                <a href="tickets.php" class="btn ghost">‹ بازگشت</a>
+              <div style="display:flex; gap:10px; align-items:center; background:#F9F6F0; padding:8px; border-radius:16px; border:1px solid #DFD2B6;">
+                <label style="cursor:pointer; display:flex; align-items:center; justify-content:center; width:44px; height:44px; background:#fff; border:1px solid #DFD2B6; border-radius:12px; font-size:20px; flex-shrink:0; margin:0;" title="فایل ضمیمه">
+                  📎
+                  <input type="file" name="attach" style="display:none" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.zip">
+                </label>
+                <textarea name="text" required maxlength="2000" placeholder="پاسخ خود را بنویسید..." style="flex:1; min-height:44px; max-height:120px; border:0; background:transparent; padding:10px; resize:none; outline:none; font-family:inherit; font-size:14px; margin:0;"></textarea>
+                <button class="btn" type="submit" style="padding:0 24px; border-radius:12px; height:44px; font-weight:800; font-size:14px; display:flex; align-items:center; flex-shrink:0; margin:0;">ارسال</button>
               </div>
             </form>
             <form method="post" style="margin-top:10px" onsubmit="return confirm('تیکت بسته شود؟')">
@@ -613,10 +637,7 @@ label span{display:block;margin-bottom:5px;font-weight:700;font-size:13px;color:
               <input type="hidden" name="id" value="<?= (int)$active['id'] ?>">
               <button class="btn danger" type="submit" style="font-size:12px">✓ بستن تیکت</button>
             </form>
-          <?php else: ?>
-            <p style="font-size:13px;color:var(--text-secondary);margin-top:16px">این تیکت بسته شده است.</p>
-            <a href="tickets.php" class="btn ghost" style="margin-top:10px">‹ بازگشت به لیست</a>
-          <?php endif; ?>
+            <?php endif; ?>
         </div>
       <?php endif; ?>
     </div>
