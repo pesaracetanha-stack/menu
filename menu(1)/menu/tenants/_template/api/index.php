@@ -55,7 +55,7 @@ $adminPost  = ['review_toggle', 'review_del',
                'save_menu', 'save_settings', 'save_promos', 'save_users',
                'save_palettes', 'save_setup', 'export_request', 'excel_apply', 'pw_audit', 'notify_send',
                'sms_cfg_save', 'sms_test', 'sms_sync', 'sms_bulk_send',
-               'payment_cfg_save', 'payment_test'];   /* v5.0.5: بررسی رمز ضعیف · test.1: پیام دستی مدیر · test.5: پنل پیامکی */
+               'payment_cfg_save', 'payment_test', 'confirm_hours'];   /* v5.0.5: بررسی رمز ضعیف · test.1: پیام دستی مدیر · test.5: پنل پیامکی */
 
 try {
   if ($_SERVER['REQUEST_METHOD'] === 'GET') {

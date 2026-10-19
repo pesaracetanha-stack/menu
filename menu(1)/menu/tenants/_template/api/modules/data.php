@@ -258,3 +258,25 @@ function notifs_pub(array $in): array {
     'status' => $r['status'], 'tableNo' => $r['tableNo'] ?? 0], $resv);
   return ['notifs' => $notifs, 'reservations' => $resv];
 }
+
+
+
+
+
+
+
+function confirm_hours(array $in): array {
+    // بارگذاری کلاس اگر از قبل لود نشده است (مسیر صحیح)
+    if (!class_exists('GStore')) {
+        require_once dirname(__DIR__) . '/lib/class-gstore.php';
+    }
+    
+    $store = GStore::for(dirname(__DIR__, 2));
+    $store->txn(function (array &$db) {
+        if (!isset($db['setup'])) $db['setup'] = [];
+        $db['setup']['hours_confirmed'] = true;
+        return $db;
+    });
+    
+    return ['ok' => true];
+}

@@ -258,7 +258,7 @@ body { font-family: var(--font-family); background: var(--bg-canvas); color: var
       <?php /* SETUP_CHECKLIST_V1 */
         $__cl = [
           ['t' => 'افزودن اولین دسته‌بندی منو', 'u' => 'design.php',                              'd' => !empty($db['menu']['cats'] ?? [])],
-          ['t' => 'تنظیم ساعت کاری کافه',        'u' => 'panel-admin.php?role=admin&tab=brand', 'd' => !empty((string)($db['menu']['brand']['hours']   ?? ''))],
+          ['t' => 'تنظیم ساعت کاری کافه',        'u' => 'design.php', 'd' => (!empty((string)($db['menu']['brand']['hours'] ?? '')) || !empty($db['setup']['hours_confirmed']))],
           ['t' => 'افزودن آدرس کافه',            'u' => 'panel-admin.php?role=admin&tab=brand', 'd' => !empty((string)($db['menu']['brand']['address'] ?? ''))],
           ['t' => 'بارگذاری لوگو',               'u' => 'panel-admin.php?role=admin&tab=brand', 'd' => !empty((string)($db['menu']['brand']['logo']    ?? ''))],
         ];

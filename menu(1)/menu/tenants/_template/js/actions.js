@@ -398,7 +398,24 @@ const Actions = {
   'logo-pick'() { imgTarget = 'logo'; $('#imgpick').click(); },
   'logo-del'() { M().brand.logo = ''; Store.commit('menu'); if(typeof applyFavicon === 'function') applyFavicon(); render(); ui.toast({ msg: 'لوگو حذف شد' }); },
 
-  'sch-x'(el) {
+  
+  'confirm-hours'() {
+    App.adm.acc = ''; // بستن کادر
+    Api.post('confirm_hours').then(r => {
+      if(r && r.ok) {
+        Store.db.setup = Store.db.setup || {};
+        Store.db.setup.hours_confirmed = true;
+        ui.toast({ msg: '✅ ساعات کاری با موفقیت بروزرسانی شد.', type: 'ok' });
+        render();
+      } else {
+        ui.toast({ msg: 'خطا در بروزرسانی ساعات کاری', type: 'bad' });
+        render();
+      }
+    }).catch(e => {
+      console.error(e);
+      ui.toast({ msg: 'خطای شبکه در ارتباط با سرور', type: 'bad' });
+    });
+  },  'sch-x'(el) {
     const i = +el.dataset.i;
     const s = M().brand.sched;
     if (!s || !s[i]) return;

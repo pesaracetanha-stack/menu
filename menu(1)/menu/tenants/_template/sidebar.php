@@ -33,7 +33,10 @@ try {
       <li class="nav-item <?= $__currentPage === 'panel-admin.php' ? 'active' : '' ?>" onclick="window.location.href='panel-admin.php'">
         <span class="icon">📊</span> داشبورد
       </li>
-      <li class="nav-item" onclick="window.location.href='design.php'">
+      <li class="nav-item" onclick="window.location.href='design.php?tab=reports'">
+      <span class="icon">📊</span> گزارش‌ها
+    </li>
+    <li class="nav-item" onclick="window.location.href='design.php'">
         <span class="icon">🎨</span> طراحی منو
       </li>
       <li class="nav-item" onclick="window.location.href='cashier.php'">

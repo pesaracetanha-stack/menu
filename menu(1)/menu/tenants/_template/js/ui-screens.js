@@ -159,7 +159,7 @@ function adminHTML(){
  return appbar('مدیریت',v.n+' · '+M().brand.name,tabs,
    `${t==='design'?`<span id="saveBadge" class="save-badge">ذخیرهٔ خودکار</span>`:''}
     <button class="icobtn" data-act="logout-admin" title="خروج از حساب مدیر">${ic('logout',17)}</button>`)
-  +(t==='design'?designerHTML():t==='custs'?customersHTML():homeDashHTML());
+  +(t==='design'?designerHTML():t==='custs'?customersHTML():t==='reports'?reportsHTML():homeDashHTML());
 }
 /* صفحهٔ اصلی مدیریت — v5.0.5-test.1: گزارش‌ها (پیش‌فرض) + میزها و رزرو + تنظیمات */
 function homeDashHTML(){
@@ -168,7 +168,7 @@ function homeDashHTML(){
   <button class="jbtn" data-act="home-jump" data-id="hd-tables">${ic('table',14)} میزها و رزرو</button>
   <button class="jbtn" data-act="home-jump" data-id="hd-settings">${ic('sliders',14)} تنظیمات</button></div>`;
  return `<div class="homedash">${jump}
-  <div id="hd-reports">${reportsHTML()}</div>
+  
   <div id="hd-tables">${adminTablesHTML()}</div>
   <div id="hd-settings">${settingsHTML()}</div></div>`;
 }
@@ -219,7 +219,11 @@ function designerHTML(){
    ${sec('clock','ساعات کاری هفتگی',`<p>انتخاب مستقیم از ساعت سیستم (۲۴ ساعته) · «تعطیل» = روز غیرفعال</p>
     <div class="sched-edit">${DAYS7.map((d,i)=>{const r=sched[i];
      return `<div class="sc-day${r.x?' x':''}"><div class="sc-top"><b>${d}</b><button class="sc-x${r.x?' on':''}" data-act="sch-x" data-i="${i}">${r.x?'تعطیل ✓':'تعطیل'}</button></div>
-     ${r.x?'<div class="mini" style="flex:1;text-align:center">—</div>':`<div class="sc-times"><input type="time" data-input="sch-o" data-i="${i}" value="${r.o}"><input type="time" data-input="sch-c" data-i="${i}" value="${r.c}"></div>`}</div>`;}).join('')}</div>`)}
+    
+     ${r.x?'<div class="mini" style="flex:1;text-align:center">—</div>':`<div class="sc-times"><input type="time" data-input="sch-o" data-i="${i}" value="${r.o}"><input type="time" data-input="sch-c" data-i="${i}" value="${r.c}"></div>`}</div>`;}).join('')}<button class="btn blk" data-act="confirm-hours" style="margin-top:16px; background:#4F7A3D; color:#fff; padding:12px; font-weight:bold; border-radius:8px; width:100%;">✓ تایید نهایی تمام روزها</button></div>
+      <div style="margin-top:16px; text-align:center;">
+        
+      </div>`)}
    ${sec('img','بنر سرصفحه (هدر)',`<p>پشتِ لوگو و نام کسب‌وکار قرار می‌گیرد.</p>
     <div class="row-btns">
      <button class="btn sm ${th.headMode==='plain'?'':'ghost'}" data-act="head-mode" data-m="plain">بدون</button>
@@ -501,6 +505,7 @@ function reportsHTML(){
  ].filter(Boolean).join('');
  return `<div class="rwrap">
   <div class="r-head"><h2>گزارش فروش و عملکرد</h2>
+   <button class="btn ghost sm" onclick="window.location.href='panel-admin.php'" style="margin-inline-start:16px">بازگشت به خانه</button>
    <div class="seg"><button class="${r==='today'?'on':''}" data-act="range" data-r="today">امروز</button>
    <button class="${r==='7d'?'on':''}" data-act="range" data-r="7d">۷ روز</button>
    <button class="${r==='30d'?'on':''}" data-act="range" data-r="30d">۳۰ روز</button></div></div>
@@ -543,7 +548,7 @@ function custListHTML(){
    return `<div class="cust-r"><div class="cr-a"><span class="cr-no" title="شمارهٔ اشتراک">${fa(c.sub_no||0)}</span><b>${esc(c.name||'بی‌نام')}</b><span class="tagpill">${esc(lv.n)}</span></div>
     <span class="cr-p" dir="ltr">${esc(String(c.phone||''))}</span>
     <span class="mini">${c.since?dtfC.format(c.since):''}${c._n?` · ${fa(c._n)} سفارش · ${faM(c._sum)} تومان خرید`:'· هنوز سفارشی ثبت نشده'}${loc?`<br>${ic('pin',11)} ${esc(loc.length>46?loc.slice(0,46)+'…':loc)}`:''}</span>
-    <b class="cr-pt">${fa(c.points||0)} <i>امتیاز</i></b></div>`;}).join('')}</div>`;
+    <b class="cr-pt">${fa(c.points||0)} <i>امتیاز</i></b></div>`;}).join('')}<button class="btn blk" data-act="confirm-hours" style="margin-top:16px; background:#4F7A3D; color:#fff; padding:12px; font-weight:bold; border-radius:8px; width:100%;">✓ تایید نهایی تمام روزها</button></div>`;
 }
 function customersHTML(){
  const cs=Store.db.customers||[];
