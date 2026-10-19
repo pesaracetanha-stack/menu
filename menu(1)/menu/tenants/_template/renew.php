@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $act === 'start') {
           $err = 'خطا در ایجاد پرداخت: ' . ($r['error'] ?? 'نامشخص');
         } else {
           $auth = (string)$r['authority'];
-          zp_tx_update($txId, ['status' => 'redirected']);
+          zp_tx_update($txId, ['status' => 'redirected', 'authority' => $auth]);
           header('Location: ' . $client->getPaymentUrl($auth));
           exit;
         }

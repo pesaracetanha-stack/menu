@@ -83,17 +83,28 @@ class ZarinPal {
 
     private function post(string $url, array $body): array {
         $payload = json_encode($body, JSON_UNESCAPED_UNICODE);
-        $ctx = stream_context_create(['http' => [
-            'method'        => 'POST',
-            'timeout'       => 15,
-            'ignore_errors' => true,
-            'header'        => "Content-Type: application/json\r\nContent-Length: " . strlen($payload) . "\r\n",
-            'content'       => $payload,
-        ]]);
-        $res = @file_get_contents($url, false, $ctx);
-        if ($res === false) {
-            return ['ok' => false, 'error' => 'ارتباط با زرین‌پال برقرار نشد — اینترنت سرور را بررسی کنید'];
+        
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($payload)
+        ]);
+        // برای محیط لوکال (ویندوز) بررسی SSL غیرفعال می‌شود
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+        $res = curl_exec($ch);
+        $err = curl_error($ch);
+        curl_close($ch);
+
+        if ($res === false || $res === '') {
+            return ['ok' => false, 'error' => 'ارتباط با زرین‌پال برقرار نشد: ' . $err];
         }
+        
         $j = json_decode((string)$res, true);
         if (!is_array($j)) {
             return ['ok' => false, 'error' => 'پاسخ نامعتبر از زرین‌پال'];

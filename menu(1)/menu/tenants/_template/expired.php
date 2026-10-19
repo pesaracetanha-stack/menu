@@ -58,7 +58,8 @@ p{font-size:14px;line-height:2;color:#4A3D2C;margin-bottom:16px}
     داده‌های شما کاملاً محفوظ هستند و پس از تمدید، بلافاصله در دسترس خواهند بود.
   </p>
   <div class="actions">
-    <a class="btn primary" href="tel:+989198345661">📞 تماس با پشتیبانی</a>
+    <a href="renew.php" class="btn" style="display:block; width:100%; text-align:center; background:#4F7A3D; color:#fff; padding:16px; border-radius:12px; text-decoration:none; font-weight:800; font-size:16px; margin-bottom:12px; box-shadow:0 4px 12px rgba(79,122,61,0.2); border:0;">💳 تمدید خودکار اشتراک (پرداخت آنلاین)</a>
+<a class="btn primary" href="tel:+989198345661">📞 تماس با پشتیبانی</a>
     <a class="btn ghost" href="https://t.me/+989198345661" target="_blank" rel="noopener">💬 پیام در تلگرام</a>
     <a class="btn ghost" href="index.html">👁 مشاهده منوی مشتری</a>
   </div>

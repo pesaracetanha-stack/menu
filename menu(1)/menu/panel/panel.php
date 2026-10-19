@@ -56,7 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $ok = '✅ قیمت‌ها و پلن‌ها ذخیره شد';
         plat_log('save_plans', ['keys' => array_keys($clean)]);
-        break;      case 'suspend':  plat_suspend($_POST['slug'] ?? ''); $ok = 'کافه غیرفعال شد'; plat_log('suspend', ['slug' => $_POST['slug'] ?? '']); break;
+        break;      case 'save_sms':
+        $smsFile = __DIR__ . '/../data/platform-sms.json';
+        $incoming = $_POST['sms'] ?? [];
+        $clean = [
+            'provider' => trim((string)($incoming['provider'] ?? 'mydnspanel')),
+            'key' => trim((string)($incoming['key'] ?? '')),
+            'sender' => trim((string)($incoming['sender'] ?? '')),
+        ];
+        file_put_contents($smsFile, json_encode($clean, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $ok = '✅ تنظیمات پیامک ذخیره شد';
+        plat_log('save_sms', ['provider' => $clean['provider']]);
+        break;
+      case 'suspend':  plat_suspend($_POST['slug'] ?? ''); $ok = 'کافه غیرفعال شد'; plat_log('suspend', ['slug' => $_POST['slug'] ?? '']); break;
       case 'resetpass': $tmpPass = plat_reset_pass($_POST['slug'] ?? '');
                         $ok = 'رمز موقت مدیر کافه ساخته شد'; plat_log('resetpass', ['slug' => $_POST['slug'] ?? '']); break;
       case 'resetuser': $tmpPass = plat_reset_user($_POST['slug'] ?? '', $_POST['uid'] ?? '');
@@ -459,6 +471,33 @@ details[open] summary { border-bottom: 1px solid var(--border-subtle); }
             </div>
             <?php endforeach; ?>
             <button type="submit" class="btn btn-primary" style="padding:10px 24px">💾 ذخیره همه پلن‌ها</button>
+          </form>
+        </div>
+      </section>
+      <!-- View: SMS Settings -->
+      <section id="view-sms" class="view <?= $currentView === 'sms' ? 'active' : '' ?>">
+        <div class="card" style="max-width:600px">
+          <div class="card-header"><div class="card-title">📱 تنظیمات پنل پیامکی</div></div>
+          <p style="margin-bottom:16px;color:#7D6C54;font-size:13px">
+            API Key خود را از پنل (mydnspanel) دریافت و اینجا وارد کنید. تغییرات فوراً اعمال می‌شود.
+          </p>
+          <?php $__sms = json_decode((string)@file_get_contents(__DIR__.'/../data/platform-sms.json'), true) ?: []; ?>
+          <form method="post">
+            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+            <input type="hidden" name="act" value="save_sms">
+            <label style="display:block;margin-bottom:12px;font-size:13px;font-weight:700">سرویس‌دهنده
+              <select name="sms[provider]" style="width:100%;padding:10px;border:1px solid #DFD2B6;border-radius:8px;margin-top:6px">
+                <option value="mydnspanel" <?= ($__sms['provider'] ?? '') === 'mydnspanel' ? 'selected' : '' ?>>mydnspanel</option>
+                <option value="kavenegar" <?= ($__sms['provider'] ?? '') === 'kavenegar' ? 'selected' : '' ?>>Kavenegar</option>
+              </select>
+            </label>
+            <label style="display:block;margin-bottom:12px;font-size:13px;font-weight:700">کلید API (API Key)
+              <input type="text" name="sms[key]" value="<?= htmlspecialchars($__sms['key'] ?? '') ?>" dir="ltr" style="width:100%;padding:10px;border:1px solid #DFD2B6;border-radius:8px;margin-top:6px">
+            </label>
+            <label style="display:block;margin-bottom:20px;font-size:13px;font-weight:700">شماره فرستنده (اختیاری)
+              <input type="text" name="sms[sender]" value="<?= htmlspecialchars($__sms['sender'] ?? '') ?>" dir="ltr" placeholder="اگر خالی باشد، از خط پیش‌فرض پنل استفاده می‌شود" style="width:100%;padding:10px;border:1px solid #DFD2B6;border-radius:8px;margin-top:6px">
+            </label>
+            <button type="submit" class="btn btn-primary" style="padding:10px 24px">💾 ذخیره تنظیمات</button>
           </form>
         </div>
       </section>

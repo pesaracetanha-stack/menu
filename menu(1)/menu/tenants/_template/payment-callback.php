@@ -86,5 +86,5 @@ try {
   error_log('[gitiarts] license renew failed: ' . $e->getMessage());
 }
 
-header('Location: renew.php?success=1&ref=' . urlencode((string)($r['ref_id'] ?? '')));
+header('Location: payment-success.php?ref=' . urlencode((string)($r['ref_id'] ?? '')));
 exit;

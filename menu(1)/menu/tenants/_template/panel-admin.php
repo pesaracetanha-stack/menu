@@ -27,7 +27,26 @@ if (($_SESSION['tenant_role'] ?? 'admin') !== 'admin') {
 require_once __DIR__ . '/api/lib/db.php';
 require_once __DIR__ . '/api/lib/auth.php';
 $db  = t_db_get();
+
+// LICENSE_LOCK_V3 (Bulletproof Redirect)
+if (function_exists('t_license') && isset($db)) {
+    $__lic_check = t_license($db);
+    if (!($__lic_check['ok'] ?? true) && basename($_SERVER['PHP_SELF']) !== 'expired.php') {
+        if (!headers_sent()) {
+            header('Location: expired.php');
+        } else {
+            echo '<script>location.replace("expired.php");</script>';
+        }
+        exit;
+    }
+}
 $lic = t_license($db);
+
+// LICENSE_LOCK_V1: Redirect to expired.php if license is not OK (unless we are already on expired.php)
+if (!($lic['ok'] ?? true) && basename($_SERVER['PHP_SELF']) !== 'expired.php') {
+    header('Location: expired.php');
+    exit;
+}
 /* LICENSE_GATE_V1: قفل مرحله‌ای پس از انقضا */
 $__licDays = (int)($lic['days_left'] ?? 999);
 $__licStat = (string)($lic['status'] ?? 'active');
