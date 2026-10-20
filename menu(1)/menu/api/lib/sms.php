@@ -17,18 +17,28 @@ function sms_get_config(): array {
     return $s;
 }
 
+function format_sms_phone(string $phone): string {
+    $phone = preg_replace('/\D/', '', $phone);
+    if (strlen($phone) === 11 && $phone[0] === '0') {
+        return '98' . substr($phone, 1);
+    }
+    return $phone;
+}
+
 function sms_send_code(string $phone, string $code): bool {
     $s = sms_get_config();
     if (empty($s['key'])) return false;
-    $phone = preg_replace('/\D/', '', $phone);
+    $phone = format_sms_phone($phone);
 
-    if ($s['provider'] === 'mydnspanel') {
-        $apiUrl = "mydnspanel.com/webservice/server";
+    if (($s['provider'] ?? '') === 'mydnspanel') {
+        $sender = trim($s['sender'] ?? '');
+        if (empty($sender)) $sender = '9850004988';
+        
+        $apiUrl = "https://mydnspanel.com/webservice/server";
         $apiParam = array(
-            'action' => 'sendOTP',
-            'type' => 2,
-            'otpCode' => $code,
-            'appID' => 0,
+            'action' => 'send',
+            'from' => $sender,
+            'text' => "کد تایید شما در GitiArts: {$code}",
             'receivers' => $phone
         );
         $ch = curl_init($apiUrl);
@@ -36,18 +46,18 @@ function sms_send_code(string $phone, string $code): bool {
         curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: " . $s['key']]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $apiParam);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         $res = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($httpCode === 200) {
             $j = json_decode($res, true);
-            return is_array($j) && ($j['result'] ?? 0) === 1;
+            return is_array($j) && ($j['result'] ?? 0) == 1;
         }
         return false;
     }
 
-    // Kavenegar fallback
-    if ($s['provider'] === 'kavenegar') {
+    if (($s['provider'] ?? '') === 'kavenegar') {
         $url = 'https://api.kavenegar.com/v1/' . rawurlencode($s['key'])
              . '/verify/lookup.json?receptor=' . rawurlencode($phone)
              . '&token=' . rawurlencode($code)
@@ -64,35 +74,36 @@ function sms_send_code(string $phone, string $code): bool {
 function sms_send_welcome(string $phone, string $cafeName): bool {
     $s = sms_get_config();
     if (empty($s['key'])) return false;
-    $phone = preg_replace('/\D/', '', $phone);
+    $phone = format_sms_phone($phone);
 
-    if ($s['provider'] === 'mydnspanel') {
-        $apiUrl = "mydnspanel.com/webservice/server";
+    if (($s['provider'] ?? '') === 'mydnspanel') {
+        $sender = trim($s['sender'] ?? '');
+        if (empty($sender)) $sender = '9850004988';
+        
+        $apiUrl = "https://mydnspanel.com/webservice/server";
         $apiParam = array(
             'action' => 'send',
-            'text' => "کافه «{$cafeName}» با موفقیت ثبت شد.",
+            'from' => $sender,
+            'text' => "کافه «{$cafeName}» با موفقیت در GitiArts ثبت شد.",
             'receivers' => $phone
         );
-        if (!empty($s['sender'])) {
-            $apiParam['from'] = $s['sender'];
-        }
         $ch = curl_init($apiUrl);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: " . $s['key']]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $apiParam);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         $res = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($httpCode === 200) {
             $j = json_decode($res, true);
-            return is_array($j) && ($j['result'] ?? 0) === 1;
+            return is_array($j) && ($j['result'] ?? 0) == 1;
         }
         return false;
     }
 
-    // Kavenegar fallback
-    if ($s['provider'] === 'kavenegar') {
+    if (($s['provider'] ?? '') === 'kavenegar') {
         if (empty($s['template_welcome'])) return false;
         $token = mb_substr($cafeName, 0, 20, 'UTF-8');
         $url = 'https://api.kavenegar.com/v1/' . rawurlencode($s['key'])

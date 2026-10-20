@@ -1,15 +1,5 @@
 {
     "nextId": 7,
     "tenants": [
-        {
-            "id": 6,
-            "slug": "madar",
-            "name": "مادر خانومی",
-            "phone": "09198345561",
-            "active": true,
-            "created": 1792425047817,
-            "domain": "",
-            "license": "SARU-17C5367B"
-        }
     ]
 }

@@ -339,7 +339,7 @@ function showOtpStep(data){
   $('#otp-step').style.display = 'block';
   $('#f-otp').value = data.dev_code || '';
   $('#otp-msg').className = data.dev_code ? 'msg warn' : 'msg';
-  $('#otp-msg').textContent = data.dev_code ? 'حالت توسعه: کد پر شد.' : '';
+  $('#otp-msg').textContent = '';
   $('#f-otp').focus();
 }
 $('#otp-btn').addEventListener('click', async () => {

@@ -103,7 +103,7 @@ if ($otpCode === '') {
   ];
   if ($isLocal) {
     $sec = sec_load();
-    $respData['dev_code'] = $sec['otps'][$phone]['code'] ?? null;
+    
   }
   p_json_dbg(true, null, $respData);
 }
