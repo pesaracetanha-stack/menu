@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $msg = pauth_setup($_POST['key'] ?? '', $_POST['p1'] ?? '', $_POST['p2'] ?? '');
     if ($msg === '') { plat_log('setup'); $_SESSION['plat'] = true; header('Location: panel.php'); exit; }
   } elseif ($act === 'login') {
-    $msg = pauth_login($_POST['pass'] ?? '');
+    $msg = pauth_login($_POST['user'] ?? '', $_POST['pass'] ?? '');
     if ($msg === '') {
       plat_log('login');
       if (pauth_otp_enabled()) {
@@ -96,7 +96,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <form method="post">
         <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
         <input type="hidden" name="act" value="login">
-        <label>رمز عبور مدیر
+        <label>نام کاربری <small style="color:#888; font-weight:normal">(برای مدیر کل خالی بگذارید)</small>
+          <input type="text" name="user" autocomplete="username" placeholder="نام کاربری پشتیبان"></label>
+        <label>رمز عبور
           <input type="password" name="pass" required autocomplete="current-password" autofocus></label>
         <button>ورود</button>
       </form>

@@ -137,33 +137,57 @@
     <h2>منوی کافه‌ات را همین حالا بساز</h2>
     <p class="reg-sub">۱۴ روز کامل رایگان تست کن — بدون نیاز به کارت بانکی.</p>
     <form id="regForm" novalidate>
-      <label>نام کافه / رستوران
-        <input type="text" id="f-name" maxlength="60" placeholder="مثلاً: کافه مانا" required></label>
-      <label>آدرس اختصاصی منو <span id="slug-prev" class="slug" dir="ltr">gitiarts.ir/menu/…</span>
-        <input type="text" id="f-slug" maxlength="30" dir="ltr" placeholder="cafemana" autocomplete="off" required></label>
-      <p class="hint">فقط حروف انگلیسی کوچک، عدد و خط‌تیره — این می‌شود آدرس منوی تو</p>
-      <label>موبایل (برای بازیابی رمز)
-        <input type="tel" id="f-phone" inputmode="numeric" maxlength="11" dir="ltr" placeholder="09121234567" required></label>
-      <label>رمز عبور پنل مدیریت
-        <input type="password" id="f-pass" required autocomplete="new-password"></label>
-      <div class="pw-checks" id="pw-checks">
-        <span data-k="len">• حداقل ۸ کاراکتر</span>
-        <span data-k="alpha">• حداقل یک حرف</span>
-        <span data-k="num">• حداقل یک عدد</span>
-        <span data-k="sym">• حداقل یک علامت مثل @ # !</span>
-      </div>
-      <p class="pw-warn" id="pw-common" style="display:none">⚠️ این رمز جزو رایج‌ترین رمزهای هک‌شدهٔ جهان است — قابل قبول نیست؛ یک ترکیب شخصی‌سازی‌شده بسازید (مثلاً دو کلمهٔ بی‌ربط + عدد).</p>
-      <p class="hint" style="margin-top:-2px">رمز خوب: طولانی، غیرقابل حدس، بدون تاریخ تولد و شمارهٔ موبایل — و فقط برای همین پنل.</p>
-      <label>تکرار رمز
-        <input type="password" id="f-pass2" required autocomplete="new-password"></label>
-      <p class="pw-warn" id="pw-eq" style="display:none">تکرار رمز با رمز یکسان نیست.</p>
-      <label class="chk">
-        <input type="checkbox" id="f-priv" required>
-        <span>دادهٔ مشتریانم (شماره موبایل باشگاه) نزد GitiArts نگه‌داری می‌شود و مسئول حفاظت از آن هستم.</span>
-      </label>
-      <p class="msg" id="reg-msg"></p>
-      <button id="reg-btn" type="submit" disabled title="تا سبز شدن همهٔ تیک‌های رمز و کامل شدن فرم فعال نمی‌شود">ساخت منوی من 🚀</button>
-    </form>
+        <label>نام کافه / رستوران
+          <input type="text" id="f-name" maxlength="60" placeholder="مثلاً: کافه مانا" required></label>
+        
+        <div style="display:flex; gap:10px;">
+          <label style="flex:1">نام مدیر
+            <input type="text" id="f-firstname" maxlength="50" placeholder="مثلاً: علی" required></label>
+          <label style="flex:1">نام خانوادگی
+            <input type="text" id="f-lastname" maxlength="50" placeholder="مثلاً: رضایی" required></label>
+        </div>
+        
+        <label>کد ملی مدیر
+          <input type="text" id="f-nationalid" inputmode="numeric" maxlength="10" minlength="10" placeholder="۱۰ رقم بدون خط تیره" required></label>
+        
+        <label>نشانی کافه / رستوران
+          <input type="text" id="f-address" maxlength="200" placeholder="استان، شهر، خیابان، پلاک" required></label>
+        
+        <label>کد پستی
+          <input type="text" id="f-postalcode" inputmode="numeric" maxlength="10" minlength="10" placeholder="۱۰ رقم بدون خط تیره" required></label>
+
+        <label>آدرس اختصاصی منو <span id="slug-prev" class="slug" dir="ltr">gitiarts.ir/menu/…</span></label>
+        <div style="display:flex; gap:8px; margin-top:-10px; margin-bottom: 12px;">
+          <input type="text" id="f-slug" maxlength="30" dir="ltr" placeholder="cafemana" autocomplete="off" required style="flex:1; margin:0;">
+          <button type="button" id="btn-check-slug" class="btn sm ghost" style="width:auto; padding:0 16px; white-space:nowrap;">بررسی</button>
+        </div>
+        <p class="hint" style="margin-top:-6px;">فقط حروف انگلیسی کوچک، عدد و خط‌تیره — این می‌شود آدرس منوی تو</p>
+
+        <label>موبایل (برای بازیابی رمز)
+          <input type="tel" id="f-phone" inputmode="numeric" maxlength="11" dir="ltr" placeholder="09121234567" required></label>
+
+        <label>رمز عبور پنل مدیریت
+          <input type="password" id="f-pass" required autocomplete="new-password"></label>
+        <div class="pw-checks" id="pw-checks">
+          <span data-k="len">• حداقل ۸ کاراکتر</span>
+          <span data-k="alpha">• حداقل یک حرف</span>
+          <span data-k="num">• حداقل یک عدد</span>
+          <span data-k="sym">• حداقل یک علامت مثل @ # !</span>
+        </div>
+        <p class="pw-warn" id="pw-common" style="display:none">⚠️ این رمز جزو رایج‌ترین رمزهای هک‌شدهٔ جهان است — قابل قبول نیست؛ یک ترکیب شخصی‌سازی‌شده بسازید (مثلاً دو کلمهٔ بی‌ربط + عدد).</p>
+        <p class="hint" style="margin-top:-2px">رمز خوب: طولانی، غیرقابل حدس، بدون تاریخ تولد و شمارهٔ موبایل — و فقط برای همین پنل.</p>
+        
+        <label>تکرار رمز
+          <input type="password" id="f-pass2" required autocomplete="new-password"></label>
+        <p class="pw-warn" id="pw-eq" style="display:none">تکرار رمز با رمز یکسان نیست.</p>
+        
+        <label class="chk">
+          <input type="checkbox" id="f-priv" required>
+          <span>دادهٔ مشتریانم (شماره موبایل باشگاه) نزد GitiArts نگه‌داری می‌شود و مسئول حفاظت از آن هستم.</span>
+        </label>
+        <p class="msg" id="reg-msg"></p>
+        <button id="reg-btn" type="submit" disabled title="تا سبز شدن همهٔ تیک‌های رمز و کامل شدن فرم فعال نمی‌شود">ساخت منوی من 🚀</button>
+      </form>
     <div id="otp-step" style="display:none;margin-top:14px">
       <!-- OTP_STEP_V1 -->
       <p class="hint" style="font-weight:700;color:var(--ink);margin-bottom:4px">کد تأیید پیامکی</p>
@@ -219,156 +243,284 @@
 
 <script>
 'use strict';
-const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
- $('#yr').textContent=new Intl.DateTimeFormat('fa-IR',{year:'numeric'}).format(new Date());
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
 
-/* ── اعتبارسنجی زندهٔ slug ── */
-const RESERVED=['admin','panel','api','www','mail','ftp','data','updates','demo','register','login','assets','static','cdn','support','test'];
-const slugOk=s=>/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(s) && !RESERVED.includes(s);
-const slugInput=$('#f-slug'), slugPrev=$('#slug-prev');
-slugInput.addEventListener('input',()=>{
-  let v=slugInput.value.toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,30);
-  slugInput.value=v;
-  if(!v){slugPrev.textContent='gitiarts.ir/menu/…';slugPrev.classList.remove('ok','bad');check();return;}
-  slugPrev.textContent='gitiarts.ir/menu/'+v+'/';
-  slugPrev.classList.toggle('ok',slugOk(v));
-  slugPrev.classList.toggle('bad',!slugOk(v));
-  check();
-});
+// Year
+if($('#yr')) $('#yr').textContent = new Intl.DateTimeFormat('fa-IR', {year: 'numeric'}).format(new Date());
 
-/* ── چک‌لیست زندهٔ رمز عبور + هشدار رمزهای رایج ── */
-const COMMON_PW=['12345678','123456789','1234567890','1234567891','11223344','11111111','00000000','12121212','12341234','1234567a','123456aa','aa123456','a12345678','qwerty123','1q2w3e4r','q1w2e3r4','password','password1','passw0rd','abcd1234','abcdefgh','iloveyou','admin1234','admin12345','88888888','66666666','99999999','147258369','987654321','9876543210','iran1234','iran12345','0912123456','0912345678','coffee123','cafe12345','gitiarts1'];
-function pwState(){
-  const v=$('#f-pass').value;
-  const st={len:v.length>=8, alpha:/[A-Za-z\u0600-\u06FF]/.test(v), num:/\d/.test(v),
-            sym:/[^A-Za-z0-9\u0600-\u06FF\s]/.test(v), common:COMMON_PW.includes(v.toLowerCase())};
-  $$('#pw-checks span').forEach(el=>{
-    const ok=st[el.dataset.k];
-    el.classList.toggle('ok',!!ok);
-    el.classList.toggle('no',!ok&&v.length>0);
-    el.textContent=(ok?'✓':(v?'✗':'•'))+el.textContent.slice(1);
-  });
-  $('#pw-common').style.display=st.common?'':'none';
-  const v2=$('#f-pass2').value;
-  const eqOk=!v2||v2===v;
-  $('#pw-eq').style.display=eqOk?'none':'';
-  return st;
+// Slug Check
+const RESERVED = ['admin','panel','api','www','mail','ftp','data','updates','demo','register','login','assets','static','cdn','support','test'];
+const slugOk = s => /^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(s) && !RESERVED.includes(s);
+const slugInput = $('#f-slug'), slugPrev = $('#slug-prev');
+
+if (slugInput) {
+    slugInput.addEventListener('input', () => {
+        let v = slugInput.value.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 30);
+        slugInput.value = v;
+        if(!v) {
+            slugPrev.textContent = 'gitiarts.ir/menu/…';
+            slugPrev.classList.remove('ok', 'bad');
+            check();
+            return;
+        }
+        slugPrev.textContent = 'gitiarts.ir/menu/' + v + '/';
+        slugPrev.classList.toggle('ok', slugOk(v));
+        slugPrev.classList.toggle('bad', !slugOk(v));
+        check();
+    });
 }
 
-/* ── فعال‌شدن دکمه + کامنت زندهٔ خطاهای فرم ── */
-const touched=new Set();
-['f-name','f-slug','f-phone','f-pass','f-pass2'].forEach(id=>
-  $('#'+id).addEventListener('blur',()=>{touched.add(id);check();}));
-
-function check(){
-  const st=pwState();
-  const v1=$('#f-pass').value;
-  const okName = $('#f-name').value.trim().length>=2;
-  const okSlug = slugOk(slugInput.value);
-  const okPh   = /^09\d{9}$/.test($('#f-phone').value.trim());
-  const okFac  = st.len && st.alpha && st.num && st.sym;
-  const okPass = okFac && !st.common;
-  const okEq   = v1.length>0 && v1===$('#f-pass2').value;
-  const okPriv = $('#f-priv').checked;
-  const allOk  = okName&&okSlug&&okPh&&okPass&&okEq&&okPriv;
-  $('#reg-btn').disabled = !allOk;
-
-  /* کادر قرمز برای فیلدهای دست‌خورده و ناقص */
-  const mark=(id,ok)=>$('#'+id).classList.toggle('bad-in',touched.has(id)&&!ok);
-  mark('f-name',okName); mark('f-slug',okSlug); mark('f-phone',okPh);
-  mark('f-pass',okPass); mark('f-pass2',okEq);
-
-  /* کامنت زنده: هر چیزی که کامل نیست همین‌جا به کاربر گفته می‌شود */
-  const msg=$('#reg-msg');
-  if(allOk){ msg.className='msg ok'; msg.textContent='✅ همه‌چیز آماده است — دکمهٔ پایین فعال شد.'; return; }
-  const miss=[];
-  if(!okName) miss.push('نام کافه را بنویس (حداقل ۲ حرف).');
-  if(!okSlug) miss.push('آدرس اختصاصی معتبر انتخاب کن: فقط حروف کوچک انگلیسی، عدد و خط‌تیره.');
-  if(!okPh)   miss.push('موبایل باید ۱۱ رقم باشد و با ۰۹ شروع شود.');
-  if(!okFac)  miss.push('رمز عبور فاکتورهای بالا را ندارد — تا همهٔ تیک‌ها سبز نشود حساب ساخته نمی‌شود.');
-  if(st.common) miss.push('این رمز جزو رایج‌ترین رمزهای هک‌شدهٔ جهان است — ترکیب شخصی‌تری بساز.');
-  if(!okEq)   miss.push('تکرار رمز را دقیقاً مثل خود رمز بنویس.');
-  if(!okPriv) miss.push('تیک تعهد نگه‌داری دادهٔ مشتریان را بزن.');
-  msg.className='msg warn'; msg.textContent=miss.join(' ');
+// Slug check button
+const btnCheck = document.getElementById('btn-check-slug');
+if (btnCheck) {
+    btnCheck.addEventListener('click', async function() {
+        const slug = document.getElementById('f-slug').value.trim();
+        if(!slug) return;
+        btnCheck.textContent = '...';
+        btnCheck.disabled = true;
+        try {
+            const res = await fetch('api/check-slug.php?slug=' + encodeURIComponent(slug));
+            const data = await res.json();
+            const msg = document.getElementById('reg-msg');
+            msg.className = data.ok ? 'msg ok' : 'msg bad';
+            msg.textContent = data.msg;
+            if(!data.ok) document.getElementById('f-slug').value = '';
+        } catch(e) {
+            alert('خطا در بررسی لینک');
+        } finally {
+            btnCheck.textContent = 'بررسی';
+            btnCheck.disabled = false;
+        }
+    });
 }
-['f-name','f-phone','f-pass','f-pass2'].forEach(id=>$('#'+id).addEventListener('input',check));
- $('#f-priv').addEventListener('change',check);
-check();
 
-/* ── ارسال ── */
- $('#regForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const btn=$('#reg-btn'), msg=$('#reg-msg');
-  /* بازبینی نهایی — اگر فرم ناقص باشد، کامنت خطاها همان‌جا نمایش داده شده و ارسال نمی‌شود */
-  check();
-  if($('#reg-btn').disabled) return;
-  btn.disabled=true; btn.textContent='در حال ساخت منوی تو…';
-  msg.className='msg'; msg.textContent='';
-  try{
-    const r=await fetch('register.php',{method:'POST',credentials:'same-origin',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        name:$('#f-name').value.trim(),
-        slug:slugInput.value,
-        phone:$('#f-phone').value.trim(),
-        pass:$('#f-pass').value
-      })});
-    const t=await r.text();
-    let j; try{ j=JSON.parse(t); }catch(_){ throw new Error('پاسخ سرور نامعتبر بود — چند لحظه بعد دوباره امتحان کن'); }
-    if(!j.ok) throw new Error(j.err||'خطای نامشخص');
-    msg.className='msg ok'; msg.textContent='✅ منوی تو ساخته شد! داریم می‌بریم به پنل…';
-    if(j.data&&j.data.need_otp){showOtpStep(j.data);btn.disabled=false;btn.textContent='ساخت منوی من';return;}
-    setTimeout(()=>{location.href=j.data.url;},1200);
-  }catch(err){
-    msg.className='msg bad'; msg.textContent='⚠️ '+err.message;
-    btn.disabled=false; btn.textContent='ساخت منوی من 🚀';
-  }
+// Password Checks
+const COMMON_PW = ['12345678','123456789','1234567890','1234567891','11223344','11111111','00000000','12121212','12341234','1234567a','123456aa','aa123456','a12345678','qwerty123','1q2w3e4r','q1w2e3r4','password','password1','passw0rd','abcd1234','abcdefgh','iloveyou','admin1234','admin12345','88888888','66666666','99999999','147258369','987654321','9876543210','iran1234','iran12345','0912123456','0912345678','coffee123','cafe12345','gitiarts1'];
+function pwState() {
+    const v = $('#f-pass').value;
+    const st = {
+        len: v.length >= 8,
+        alpha: /[A-Za-z\u0600-\u06FF]/.test(v),
+        num: /\d/.test(v),
+        sym: /[^A-Za-z0-9\u0600-\u06FF\s]/.test(v),
+        common: COMMON_PW.includes(v.toLowerCase())
+    };
+    $$('#pw-checks span').forEach(el => {
+        const ok = st[el.dataset.k];
+        el.classList.toggle('ok', !!ok);
+        el.classList.toggle('no', !ok && v.length > 0);
+        el.textContent = (ok ? '✓' : (v ? '✗' : '•')) + el.textContent.slice(1);
+    });
+    if ($('#pw-common')) $('#pw-common').style.display = st.common ? '' : 'none';
+    const v2 = $('#f-pass2').value;
+    const eqOk = !v2 || v2 === v;
+    if ($('#pw-eq')) $('#pw-eq').style.display = eqOk ? 'none' : '';
+    return st;
+}
+
+// Main Validation
+const touched = new Set();
+['f-name','f-slug','f-phone','f-pass','f-pass2', 'f-firstname', 'f-lastname', 'f-nationalid', 'f-address', 'f-postalcode'].forEach(id => {
+    const el = $('#' + id);
+    if (el) el.addEventListener('blur', () => { touched.add(id); check(); });
 });
-
-/* OTP_STEP_V1 */
-let otpFormState = null;
-function showOtpStep(data){
-  otpFormState = {
-    name: $('#f-name').value.trim(),
-    slug: slugInput.value,
-    phone: $('#f-phone').value.trim(),
-    pass: $('#f-pass').value
-  };
-  $('#otp-phone').textContent = data.phone_masked || '';
-  $('#regForm').style.display = 'none';
-  $('#otp-step').style.display = 'block';
-  $('#f-otp').value = data.dev_code || '';
-  $('#otp-msg').className = data.dev_code ? 'msg warn' : 'msg';
-  $('#otp-msg').textContent = '';
-  $('#f-otp').focus();
-}
-$('#otp-btn').addEventListener('click', async () => {
-  const btn = $('#otp-btn'), msg = $('#otp-msg');
-  const code = $('#f-otp').value.trim();
-  if (code.length !== 5) { msg.className='msg bad'; msg.textContent='کد ۵ رقمی را وارد کنید.'; return; }
-  if (!otpFormState) return;
-  btn.disabled = true; btn.textContent = 'در حال تأیید...';
-  msg.className='msg'; msg.textContent='';
-  try {
-    const r = await fetch('register.php',{method:'POST',credentials:'same-origin',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(Object.assign({}, otpFormState, {otp: code}))
-    });
-    const t = await r.text();
-    let j; try{ j=JSON.parse(t); }catch(_){ throw new Error('پاسخ سرور نامعتبر'); }
-    if (!j.ok) throw new Error(j.err||'کد نادرست است');
-    msg.className='msg ok'; msg.textContent='منوی تو ساخته شد!';
-    setTimeout(()=>{location.href=j.data.url;},1200);
-  } catch(err) {
-    msg.className='msg bad'; msg.textContent=err.message;
-    btn.disabled = false; btn.textContent = 'تأیید و ساخت منو';
-  }
-});
-$('#otp-back').addEventListener('click', (e) => {
-  e.preventDefault();
-  $('#otp-step').style.display = 'none';
-  $('#regForm').style.display = 'block';
-});
+
+function check() {
+    const st = pwState();
+    const v1 = $('#f-pass').value;
+    
+    const okName = $('#f-name').value.trim().length >= 2;
+    const okFirst = $('#f-firstname').value.trim().length >= 2;
+    const okLast = $('#f-lastname').value.trim().length >= 2;
+    const okNat = /^\d{10}$/.test($('#f-nationalid').value.trim());
+    const okAddr = $('#f-address').value.trim().length >= 10;
+    const okPost = /^\d{10}$/.test($('#f-postalcode').value.trim());
+    
+    const okSlug = slugOk(slugInput.value);
+    const okPh = /^09\d{9}$/.test($('#f-phone').value.trim());
+    const okFac = st.len && st.alpha && st.num && st.sym;
+    const okPass = okFac && !st.common;
+    const okEq = v1.length > 0 && v1 === $('#f-pass2').value;
+    const okPriv = $('#f-priv').checked;
+    
+    const allOk = okName && okFirst && okLast && okNat && okAddr && okPost && okSlug && okPh && okPass && okEq && okPriv;
+    $('#reg-btn').disabled = !allOk;
+    
+    const mark = (id, ok) => {
+        const el = $('#' + id);
+        if (el) el.classList.toggle('bad-in', touched.has(id) && !ok);
+    };
+    mark('f-name', okName); mark('f-firstname', okFirst); mark('f-lastname', okLast);
+    mark('f-nationalid', okNat); mark('f-address', okAddr); mark('f-postalcode', okPost);
+    mark('f-slug', okSlug); mark('f-phone', okPh); mark('f-pass', okPass); mark('f-pass2', okEq);
+    
+    const msg = $('#reg-msg');
+    if (allOk) {
+        msg.className = 'msg ok';
+        msg.textContent = '✅ همه‌چیز آماده است — دکمهٔ پایین فعال شد.';
+        return;
+    }
+    const miss = [];
+    if(!okName) miss.push('نام کافه را بنویس.');
+    if(!okFirst || !okLast) miss.push('نام و نام خانوادگی مدیر را کامل وارد کنید.');
+    if(!okNat) miss.push('کد ملی ۱۰ رقم نیست.');
+    if(!okAddr) miss.push('نشانی کامل نیست.');
+    if(!okPost) miss.push('کد پستی ۱۰ رقم نیست.');
+    if(!okSlug) miss.push('آدرس اختصاصی معتبر نیست.');
+    if(!okPh) miss.push('موبایل معتبر نیست (۰۹...).');
+    if(!okFac) miss.push('رمز شرایط را ندارد.');
+    if(st.common) miss.push('رمز بسیار ساده است.');
+    if(!okEq) miss.push('تکرار رمز یکسان نیست.');
+    if(!okPriv) miss.push('تیک تعهد را بزنید.');
+    msg.className = 'msg warn'; 
+    msg.textContent = miss.join(' ');
+}
+
+// Attach input listeners
+['f-name','f-phone','f-pass','f-pass2', 'f-firstname', 'f-lastname', 'f-nationalid', 'f-address', 'f-postalcode'].forEach(id => {
+    const el = $('#' + id);
+    if (el) el.addEventListener('input', check);
+});
+if ($('#f-priv')) $('#f-priv').addEventListener('change', check);
+check(); // Initial check
+
+// OTP Logic
+let otpFormState = null;
+
+function showOtpStep(data) {
+    otpFormState = {
+        name: $('#f-name').value.trim(),
+        slug: $('#f-slug').value.trim(),
+        phone: $('#f-phone').value.trim(),
+        pass: $('#f-pass').value,
+        first_name: $('#f-firstname').value.trim(),
+        last_name: $('#f-lastname').value.trim(),
+        national_id: $('#f-nationalid').value.trim(),
+        address: $('#f-address').value.trim(),
+        postal_code: $('#f-postalcode').value.trim()
+    };
+    $('#otp-phone').textContent = data.phone_masked || '';
+    $('#regForm').style.display = 'none';
+    $('#otp-step').style.display = 'block';
+    $('#f-otp').value = data.dev_code || '';
+    $('#otp-msg').className = 'msg';
+    $('#otp-msg').textContent = '';
+    
+    if (data.dev_code) {
+        // AUTO SUBMIT OTP
+        setTimeout(() => {
+            const otpBtn = $('#otp-btn');
+            if(otpBtn) otpBtn.click();
+        }, 800);
+    } else {
+        $('#f-otp').focus();
+    }
+}
+
+// Submit Main Form
+$('#regForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('#reg-btn'), msg = $('#reg-msg');
+    check();
+    if (btn.disabled) return;
+    
+    btn.disabled = true;
+    btn.textContent = 'در حال ساخت منوی تو…';
+    msg.className = 'msg';
+    msg.textContent = '';
+    
+    try {
+        const r = await fetch('register.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                name: $('#f-name').value.trim(),
+                slug: $('#f-slug').value.trim(),
+                phone: $('#f-phone').value.trim(),
+                pass: $('#f-pass').value,
+                first_name: $('#f-firstname').value.trim(),
+                last_name: $('#f-lastname').value.trim(),
+                national_id: $('#f-nationalid').value.trim(),
+                address: $('#f-address').value.trim(),
+                postal_code: $('#f-postalcode').value.trim()
+            })
+        });
+        const t = await r.text();
+        let j; try { j = JSON.parse(t); } catch (_) { throw new Error('پاسخ سرور نامعتبر بود — چند لحظه بعد دوباره امتحان کن'); }
+        if (!j.ok) throw new Error(j.err || 'خطای نامشخص');
+        
+        if (j.data && j.data.need_otp) {
+            showOtpStep(j.data);
+            btn.disabled = false;
+            btn.textContent = 'ساخت منوی من 🚀';
+            return;
+        }
+        
+        msg.className = 'msg ok';
+        msg.textContent = '✅ منوی تو ساخته شد! داریم می‌بریم به پنل…';
+        setTimeout(() => { location.href = j.data.url; }, 1200);
+        
+    } catch (err) {
+        msg.className = 'msg bad';
+        msg.textContent = '⚠️ ' + err.message;
+        btn.disabled = false;
+        btn.textContent = 'ساخت منوی من 🚀';
+    }
+});
+
+// Submit OTP Form
+const otpBtn = $('#otp-btn');
+if (otpBtn) {
+    otpBtn.addEventListener('click', async () => {
+        const btn = $('#otp-btn'), msg = $('#otp-msg');
+        const code = $('#f-otp').value.trim();
+        if (code.length !== 5) {
+            msg.className = 'msg bad';
+            msg.textContent = 'کد ۵ رقمی را وارد کنید.';
+            return;
+        }
+        if (!otpFormState) return;
+        
+        btn.disabled = true;
+        btn.textContent = 'در حال تأیید...';
+        msg.className = 'msg';
+        msg.textContent = '';
+        
+        try {
+            const r = await fetch('register.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(Object.assign({}, otpFormState, {otp: code}))
+            });
+            const t = await r.text();
+            let j; try { j = JSON.parse(t); } catch (_) { throw new Error('پاسخ سرور نامعتبر'); }
+            if (!j.ok) throw new Error(j.err || 'کد نادرست است');
+            
+            msg.className = 'msg ok';
+            msg.textContent = 'منوی تو ساخته شد!';
+            setTimeout(() => { location.href = j.data.url; }, 1200);
+            
+        } catch (err) {
+            msg.className = 'msg bad';
+            msg.textContent = err.message;
+            btn.disabled = false;
+            btn.textContent = 'تأیید و ساخت منو';
+        }
+    });
+}
+
+// OTP Back
+const otpBack = $('#otp-back');
+if (otpBack) {
+    otpBack.addEventListener('click', (e) => {
+        e.preventDefault();
+        $('#otp-step').style.display = 'none';
+        $('#regForm').style.display = 'block';
+    });
+}
 </script>
 </body>
 </html>

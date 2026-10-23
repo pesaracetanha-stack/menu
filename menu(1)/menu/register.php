@@ -38,9 +38,26 @@ $name  = trim((string)($in['name']  ?? ''));
 $slug  = strtolower(trim((string)($in['slug']  ?? '')));
 $phone = preg_replace('/\D/', '', (string)($in['phone'] ?? ''));
 $pass  = (string)($in['pass'] ?? '');
+$first_name  = trim((string)($in['first_name']  ?? ''));
+$last_name   = trim((string)($in['last_name']   ?? ''));
+$national_id = preg_replace('/\D/', '', (string)($in['national_id'] ?? ''));
+$address     = trim((string)($in['address']     ?? ''));
+$postal_code = preg_replace('/\D/', '', (string)($in['postal_code'] ?? ''));
 $cfg   = p_config();
 
-if (mb_strlen($name) < 2 || mb_strlen($name) > 60)
+if (mb_strlen($first_name) < 2 || mb_strlen($last_name) < 2) {
+    p_json_dbg(false, 'نام و نام خانوادگی مدیر را کامل وارد کنید');
+  }
+  if (strlen($national_id) !== 10) {
+    p_json_dbg(false, 'کد ملی باید دقیقاً ۱۰ رقم باشد');
+  }
+  if (strlen($postal_code) !== 10) {
+    p_json_dbg(false, 'کد پستی باید دقیقاً ۱۰ رقم باشد');
+  }
+  if (mb_strlen($address) < 10) {
+    p_json_dbg(false, 'نشانی کافه را کامل وارد کنید');
+  }
+  if (mb_strlen($name) < 2 || mb_strlen($name) > 60)
   p_json_dbg(false, 'نام کسب‌وکار را درست وارد کنید');
 if (!p_slug_valid($slug))
   p_json_dbg(false, 'آدرس اختصاصی نامعتبر است — فقط حروف انگلیسی کوچک، عدد و خط‌تیره');
@@ -94,7 +111,7 @@ if ($otpCode === '') {
   }
   $smsOk = sms_issue_code($phone);
   $isLocal = in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost:8000','127.0.0.1:8000','localhost','127.0.0.1'], true);
-  if (!$smsOk && !$isLocal) {
+  if (!$smsOk && !$isLocal && ($smsCfg['enabled'] ?? true)) {
     p_json_dbg(false, 'ارسال پیامک تأیید ناموفق بود — با پشتیبانی تماس بگیرید');
   }
   $respData = [
@@ -103,7 +120,7 @@ if ($otpCode === '') {
   ];
   if ($isLocal) {
     $sec = sec_load();
-    
+    $respData['dev_code'] = $sec['otps'][$phone]['code'] ?? null;
   }
   p_json_dbg(true, null, $respData);
 }
@@ -115,7 +132,7 @@ if (!sms_verify_code($phone, $otpCode)) {
 /* ═══ پایان REGISTER_OTP_V1 ═══ */
 
 try {
-  $dst = p_lock(function (array &$t) use ($name, $slug, $phone, $pass, $cfg) {
+  $dst = p_lock(function (array &$t) use ($name, $slug, $phone, $pass, $cfg, $first_name, $last_name, $national_id, $address, $postal_code) {
 
     foreach ($t['tenants'] as $x) {
       if (($x['slug'] ?? '') === $slug) {
@@ -177,6 +194,11 @@ try {
 
     $t['tenants'][] = [
       'id' => $t['nextId']++, 'slug' => $slug, 'name' => $name, 'phone' => $phone,
+        'first_name' => $first_name,
+        'last_name' => $last_name,
+        'national_id' => $national_id,
+        'address' => $address,
+        'postal_code' => $postal_code,
       'active' => true, 'created' => $now, 'domain' => '', 'license' => $db['license']['key'],
     ];
 
@@ -207,3 +229,42 @@ $_SESSION['tenant_user'] = $name;
 $schR  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $dirbR = rtrim(str_replace('\\','/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
 p_json_dbg(true, null, ['url' => $schR . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $dirbR . '/tenants/' . $slug . '/hub.php']);
+
+
+/* ════════════════════════════════════════════════════════════
+   CMAGNET CONTACT SYNC
+   ════════════════════════════════════════════════════════════ */
+function save_contact_to_cmagnet($apiKey, $userName, $userPhone, $cafeName) {
+    $apiUrl = "https://panel.cmagnet.ir/webservice/server";
+    $phoneId = "VF248"; // شناسه دفترچه تلفن شما (از تصویر دوم)
+
+    // استفاده از متغیرهای پیش‌فرض CMAGNET (بر اساس تصویر سوم)
+    $customFields = array(
+        "first_name" => $userName,
+        "last_name"  => $cafeName
+    );
+
+    $apiParam = array(
+        'action'   => 'newContact',
+        'phoneId'  => $phoneId,
+        'cNumber'  => $userPhone,
+        'cFields'  => json_encode($customFields, JSON_UNESCAPED_UNICODE)
+    );
+
+    $ch = curl_init($apiUrl);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ["Authorization: " . $apiKey]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $apiParam);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode === 200) {
+        $json = json_decode($response, true);
+        return isset($json['result']) && $json['result'] == 1;
+    }
+    return false;
+}

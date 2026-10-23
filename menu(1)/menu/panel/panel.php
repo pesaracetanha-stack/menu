@@ -59,6 +59,9 @@ require_once __DIR__ . '/../bootstrap-i18n.php';
     // END_ANALYTICS_LOGIC_V1
 sec_session();
 pauth_require();
+$isAdmin = ($_SESSION['plat_role'] ?? 'admin') === 'admin'; // متغیر سراسری برای بررسی دسترسی
+
+
 
 /* BACKUP_DASH_V1 */
 require_once __DIR__ . '/../api/lib/backup.php';
@@ -118,6 +121,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         file_put_contents($smsFile, json_encode($clean, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         $ok = '✅ تنظیمات پیامک ذخیره شد';
         plat_log('save_sms', ['provider' => $clean['provider']]);
+        break;
+      case 'add_support':
+        if (!$isAdmin) break;
+        $u = trim((string)($_POST['username'] ?? ''));
+        $p = (string)($_POST['password'] ?? '');
+        $perms = $_POST['perms'] ?? [];
+        if (strlen($u) < 3) { $msg = 'نام کاربری حداقل ۳ حرف'; break; }
+        if (strlen($p) < 8) { $msg = 'رمز حداقل ۸ کاراکتر'; break; }
+        
+        $users = is_file(__DIR__.'/../data/support-users.json') ? json_decode(file_get_contents(__DIR__.'/../data/support-users.json'), true) : [];
+        foreach ($users as $x) { if (strtolower($x['username']) === strtolower($u)) { $msg = 'این نام کاربری تکراری است'; break 2; } }
+        
+        // آپلود آواتار
+        $avatarName = '';
+        if (!empty($_FILES['avatar']['name']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+            $ext = strtolower(pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION));
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                $avatarName = 'av_' . md5(time() . $u) . '.' . $ext;
+                move_uploaded_file($_FILES['avatar']['tmp_name'], __DIR__ . '/../data/avatars/' . $avatarName);
+            }
+        }
+        
+        $users[] = ['username' => $u, 'ph' => password_hash($p, PASSWORD_DEFAULT), 'perms' => $perms, 'avatar' => $avatarName, 'created' => time()];
+        file_put_contents(__DIR__.'/../data/support-users.json', json_encode($users, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $ok = "کاربر پشتیبان '$u' اضافه شد";
+        break;
+      case 'del_support':
+        if (!$isAdmin) break;
+        $u = trim((string)($_POST['username'] ?? ''));
+        $users = is_file(__DIR__.'/../data/support-users.json') ? json_decode(file_get_contents(__DIR__.'/../data/support-users.json'), true) : [];
+        $users = array_values(array_filter($users, fn($x) => strtolower($x['username']) !== strtolower($u)));
+        file_put_contents(__DIR__.'/../data/support-users.json', json_encode($users, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        $ok = "کاربر پشتیبان '$u' حذف شد";
         break;
       case 'suspend':  plat_suspend($_POST['slug'] ?? ''); $ok = 'کافه غیرفعال شد'; plat_log('suspend', ['slug' => $_POST['slug'] ?? '']); break;
       case 'resetpass': $tmpPass = plat_reset_pass($_POST['slug'] ?? '');
@@ -207,6 +243,17 @@ $updLogs = upd_log_load();
 $__bak = bak_status();
 
 $currentView = $_GET['view'] ?? 'dashboard';
+
+// SUPPORT_ACCESS_CONTROL_V1
+if (!$isAdmin && in_array($currentView, ['system', 'security', 'plans', 'sms', 'support'])) {
+    header('Location: panel.php?view=cafes'); exit;
+}
+
+// SUPPORT_ACCESS_CONTROL_V1
+$isAdmin = ($_SESSION['plat_role'] ?? 'admin') === 'admin';
+if (!$isAdmin && in_array($currentView, ['system', 'security', 'plans', 'sms', 'support'])) {
+    header('Location: panel.php?view=cafes'); exit;
+}
 
 function plat_ev_fa(string $ev): string {
   static $m = [
@@ -424,6 +471,19 @@ details[open] summary { border-bottom: 1px solid var(--border-subtle); }
                 <span>لایسنس: <?php if ($lic['status']==='active'): ?><span class="pill ok">فعال (<?= $lic['days_left'] ?> روز)</span><?php else: ?><span class="pill warn">آزمایشی (<?= $lic['days_left'] ?> روز)</span><?php endif; ?></span>
                 <span>فضا: <b><?= pnum($x['size_mb']) ?> MB</b></span>
               </div>
+              <!-- IDENTITY_ACCORDION_V1 -->
+              <details style="margin-bottom:12px; border:1px solid #DFD2B6; border-radius:8px; background:#F9F6F0;">
+                <summary style="padding:8px 12px; font-size:12px; font-weight:800; color:#B4531F; cursor:pointer; outline:none;">
+                  ℹ️ اطلاعات
+                </summary>
+                <div style="padding:12px; font-size:12px; line-height:1.8; color:#271D12; border-top:1px dashed #DFD2B6;">
+                  <b>مدیر:</b> <?= htmlspecialchars(($x['first_name'] ?? '-') . ' ' . ($x['last_name'] ?? '')) ?><br>
+                  <b>کد ملی:</b> <?= htmlspecialchars($x['national_id'] ?? '-') ?><br>
+                  <b>موبایل:</b> <?= htmlspecialchars($x['phone'] ?? '-') ?><br>
+                  <b>کد پستی:</b> <?= htmlspecialchars($x['postal_code'] ?? '-') ?><br>
+                  <b>آدرس:</b> <?= htmlspecialchars($x['address'] ?? '-') ?>
+                </div>
+              </details>
               <div class="cafe-actions">
                 <form method="post" class="form-row" style="margin:0">
                   <input type="hidden" name="csrf" value="<?= csrf_token() ?>"><input type="hidden" name="act" value="renew"><input type="hidden" name="slug" value="<?= $x['slug'] ?>">
@@ -584,6 +644,7 @@ details[open] summary { border-bottom: 1px solid var(--border-subtle); }
                     <thead style="background:#F4F1EA; color:#7D6C54;">
                         <tr>
                             <th style="padding:12px 20px; font-weight:700">کافه</th>
+                            <th style="padding:12px 20px; font-weight:700">اطلاعات حقوقی</th>
                             <th style="padding:12px 20px; font-weight:700">پلن</th>
                             <th style="padding:12px 20px; font-weight:700">وضعیت</th>
                             <th style="padding:12px 20px; font-weight:700">تعداد سفارش</th>
@@ -593,10 +654,17 @@ details[open] summary { border-bottom: 1px solid var(--border-subtle); }
                     </thead>
                     <tbody>
                         <?php if(empty($anData)): ?>
-                        <tr><td colspan="6" style="padding:20px; text-align:center; color:#7D6C54">هنوز هیچ کافه‌ای سفارشی ثبت نکرده است.</td></tr>
+                        <tr><td colspan="7" style="padding:20px; text-align:center; color:#7D6C54">هنوز هیچ کافه‌ای سفارشی ثبت نکرده است.</td></tr>
                         <?php else: foreach($anData as $a): ?>
                         <tr style="border-bottom:1px solid #EFE7D6;">
                             <td style="padding:12px 20px;"><b><?= htmlspecialchars($a['name']) ?></b><br><small dir="ltr" style="color:#7D6C54"><?= htmlspecialchars($a['slug']) ?></small></td>
+                            <td style="padding:12px 20px; font-size:12px; line-height:1.6;">
+                                <b>مدیر:</b> <?= htmlspecialchars($a['first_name'] ?? '-') ?> <?= htmlspecialchars($a['last_name'] ?? '') ?><br>
+                                <b>کد ملی:</b> <?= htmlspecialchars($a['national_id'] ?? '-') ?><br>
+                                <b>تلفن:</b> <?= htmlspecialchars($a['phone'] ?? '-') ?><br>
+                                <span title="<?= htmlspecialchars($a['address'] ?? '') ?>"><b>آدرس:</b> <?= mb_substr($a['address'] ?? '-', 0, 20) ?>...</span><br>
+                                <b>کدپستی:</b> <?= htmlspecialchars($a['postal_code'] ?? '-') ?>
+                            </td>
                             <td style="padding:12px 20px;"><?= $a['plan'] === 'pro' ? '👑 حرفه‌ای' : ($a['plan'] === 'basic' ? '⚡ پایه' : '🌱 رایگان') ?></td>
                             <td style="padding:12px 20px;">
                                 <?= $a['active'] ? '<span style="color:#4F7A3D;font-weight:700">فعال</span>' : '<span style="color:#D32F2F;font-weight:700">منقضی</span>' ?>
@@ -609,6 +677,90 @@ details[open] summary { border-bottom: 1px solid var(--border-subtle); }
                     </tbody>
                 </table>
             </div>
+        </div>
+      </section>
+      <!-- View: Support Users -->
+      <section id="view-support" class="view <?= $currentView === 'support' ? 'active' : '' ?>">
+        <div class="card">
+          <div class="card-header"><div class="card-title">👥 مدیریت کاربران پشتیبان</div></div>
+          <p class="text-muted" style="margin-bottom:16px">برای هر پشتیبان می‌توانید تعیین کنید به کدام بخش‌ها دسترسی داشته باشد. مدیر کل به همه بخش‌ها دسترسی کامل دارد.</p>
+          
+          <form method="post" enctype="multipart/form-data" style="background:#F9F6F0; padding:16px; border-radius:12px; border:1px solid #EFE7D6; margin-bottom:24px;">
+            <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+            <input type="hidden" name="act" value="add_support">
+            
+            <div style="display:flex; gap:16px; align-items:flex-start; margin-bottom:12px;">
+                <div style="flex:1;">
+                    <label class="text-muted">نام کاربری</label>
+                    <input type="text" name="username" class="form-control" required dir="ltr" placeholder="support1">
+                </div>
+                <div style="flex:1;">
+                    <label class="text-muted">رمز عبور</label>
+                    <input type="password" name="password" class="form-control" required dir="ltr" placeholder="********">
+                </div>
+                <div style="flex:1;">
+                    <label class="text-muted">تصویر پروفایل (اختیاری)</label>
+                    <input type="file" name="avatar" accept="image/*" class="form-control" style="padding:8px;">
+                </div>
+            </div>
+            
+            <div style="margin-bottom:16px;">
+                <label class="text-muted" style="display:block; margin-bottom:8px;">سطوح دسترسی (Permissions):</label>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <label style="font-size:13px; cursor:pointer; background:#fff; padding:8px; border:1px solid #DFD2B6; border-radius:6px;"><input type="checkbox" name="perms[]" value="manage_cafes" checked> مدیریت کافه‌ها (تمدید، بکاپ، اطلاعات)</label>
+                    <label style="font-size:13px; cursor:pointer; background:#fff; padding:8px; border:1px solid #DFD2B6; border-radius:6px;"><input type="checkbox" name="perms[]" value="manage_tickets" checked> پاسخ به تیکت‌های پشتیبانی</label>
+                    <label style="font-size:13px; cursor:pointer; background:#fff; padding:8px; border:1px solid #DFD2B6; border-radius:6px;"><input type="checkbox" name="perms[]" value="manage_announcements"> مدیریت و ارسال اعلانات</label>
+                    <label style="font-size:13px; cursor:pointer; background:#fff; padding:8px; border:1px solid #DFD2B6; border-radius:6px;"><input type="checkbox" name="perms[]" value="view_analytics"> مشاهده تحلیل و آمار</label>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="padding:10px 24px;">➕ افزودن پشتیبان</button>
+          </form>
+
+          <?php $supList = is_file(__DIR__.'/../data/support-users.json') ? json_decode(file_get_contents(__DIR__.'/../data/support-users.json'), true) : []; ?>
+          
+          <?php if(empty($supList)): ?>
+            <div class="alert warn">هیچ کاربر پشتیبانی تعریف نشده است.</div>
+          <?php else: ?>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>کاربر</th><th>سطوح دسترسی</th><th>تاریخ ایجاد</th><th>عملیات</th></tr></thead>
+                <tbody>
+                  <?php foreach($supList as $su): ?>
+                  <tr>
+                    <td dir="ltr">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <?php if (!empty($su['avatar']) && is_file(__DIR__.'/../data/avatars/'.$su['avatar'])): ?>
+                                <img src="../data/avatars/<?= htmlspecialchars($su['avatar']) ?>" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                            <?php else: ?>
+                                <div style="width:32px; height:32px; border-radius:50%; background:#EFE7D6; display:flex; align-items:center; justify-content:center; font-size:16px;">👤</div>
+                            <?php endif; ?>
+                            <b><?= htmlspecialchars($su['username']) ?></b>
+                        </div>
+                    </td>
+                    <td style="font-size:12px; color:#7D6C54;">
+                        <?= implode(' · ', array_map(fn($p) => match($p) {
+                            'manage_cafes' => 'مدیریت کافه‌ها',
+                            'manage_tickets' => 'پاسخ به تیکت‌ها',
+                            'manage_announcements' => 'اعلانات',
+                            'view_analytics' => 'آمار',
+                            default => $p
+                        }, $su['perms'] ?? [])) ?>
+                    </td>
+                    <td><?= date('Y-m-d', $su['created']) ?></td>
+                    <td>
+                      <form method="post" style="margin:0" onsubmit="return confirm('حذف شود؟')">
+                        <input type="hidden" name="csrf" value="<?= csrf_token() ?>">
+                        <input type="hidden" name="act" value="del_support">
+                        <input type="hidden" name="username" value="<?= htmlspecialchars($su['username']) ?>">
+                        <button class="btn btn-danger btn-sm">حذف</button>
+                      </form>
+                    </td>
+                  </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
         </div>
       </section>
       <!-- View: Security & Logs -->

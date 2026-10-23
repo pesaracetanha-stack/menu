@@ -1,72 +1,33 @@
-# GitiArts - Git Ignore
+# ==========================================
+# GitiArts — .gitignore
+# ==========================================
 
-# Secret files
+# ۱. فایل‌های حساس و تنظیمات
+config.php
 .env
 .env.*
-!.env.example
 
-# Runtime data
-data/
-!data/.gitkeep
-storage/
-!storage/.gitkeep
-
-# Tenants (customer data)
-tenants/*
-!tenants/_template
-tenants/_template/data/
-
-# Backups
-*.bak
-*.bak-*
-*.backup
-
-# Dependencies
-/vendor/
-/node_modules/
-
-# Test artifacts
-/.phpunit.cache/
-/.phpunit.result.cache
-/phpunit.xml
-/test-report.json
-
-# Logs and state
-*.log
+# ۲. دیتابیس‌های کافه‌ها و داده‌های پلتفرم
+data/*.json
+data/*.sqlite
+data/*.db
+data/avatars/
 data/exports/
-data/backup-state.json
-data/export-requests.json
-data/tickets.json
-data/announcements.json
 data/ticket-files/
-data/announcement-images/
-data/platform.json
-data/audit.json
-data/installed.lock
-data/trash/
+tenants/*/data/
+tenants/*/uploads/
 
-# OS
-Thumbs.db
-.DS_Store
-
-# IDE
-.vscode/
-.idea/
-*.swp
-
-# Build
-*.zip
-!updates/packages/*.zip
-tenants.json.bak.*
-*.bak.plans.*
-*.bak.plans.*
-*.bak.plans.*
-
-# Backups & Temp Files
+# ۳. فایل‌های موقت توسعه
+_*.php
 *.bak.*
+*.log
+*.zip
 *.sqlite
-*.sqlite-journal
-*.sqlite-wal
-*.sqlite-shm
-tenants/*/data/*
-!tenants/_template/data/.gitkeep
+phpinfo.php
+.codesaver/
+
+# ۴. سیستم‌عامل و ادیتور
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

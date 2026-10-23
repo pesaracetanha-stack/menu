@@ -27,6 +27,7 @@ function format_sms_phone(string $phone): string {
 
 function sms_send_code(string $phone, string $code): bool {
     $s = sms_get_config();
+    if (!($s['enabled'] ?? true)) return true; // DEMO MODE: Bypass sending
     if (empty($s['key'])) return false;
     $phone = format_sms_phone($phone);
 
@@ -73,6 +74,7 @@ function sms_send_code(string $phone, string $code): bool {
 
 function sms_send_welcome(string $phone, string $cafeName): bool {
     $s = sms_get_config();
+    if (!($s['enabled'] ?? true)) return true; // DEMO MODE: Bypass sending
     if (empty($s['key'])) return false;
     $phone = format_sms_phone($phone);
 
@@ -129,7 +131,10 @@ function sms_issue_code(string $phone): bool {
   return sms_send_code($phone, $code);
 }
 function sms_verify_code(string $phone, string $code): bool {
-  $d = sec_load(); $o = $d['otps'][$phone] ?? null;
+  
+  $s = sms_get_config();
+  if (!($s['enabled'] ?? true)) return true; // DEMO MODE: Bypass verification
+$d = sec_load(); $o = $d['otps'][$phone] ?? null;
   if (!$o || $o['exp'] < time()) return false;
   if ($o['tries'] >= 5) return false;
   $d['otps'][$phone]['tries']++;

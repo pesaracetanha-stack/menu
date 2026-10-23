@@ -57,29 +57,50 @@ function pauth_setup(string $key, string $p1, string $p2): string {
 }
 
 /* ── ورود با محدودیت تلاش ── */
-function pauth_login(string $p): string {
-  $d = pauth_load(); $now = time();
-  if (($d['lock'] ?? 0) > $now)
-    return 'به‌دلیل تلاش‌های ناموفق موقتاً قفل است — چند دقیقه بعد تلاش کنید';
-  if (!pauth_configured()) return 'رمز تنظیم نشده — ابتدا راه‌اندازی را انجام دهید';
-  if (!password_verify($p, $d['ph'])) {
-    $d['attempts'] = array_values(array_filter($d['attempts'] ?? [],
-      fn($t) => $t > $now - 600));
-    $d['attempts'][] = $now;
-    $cfg = require dirname(__DIR__, 2) . '/config.php';
-    if (count($d['attempts']) >= $cfg['security']['login_max_attempts']) {
-      $d['lock'] = $now + $cfg['security']['lockout_minutes'] * 60;
-      $d['attempts'] = [];
+function pauth_login(string $user, string $p): string {
+  // بررسی ورود مدیر کل (با نام کاربری خاص یا خالی)
+  if ($user === '' || strtolower($user) === 'hpreza1364-1985') {
+    $d = pauth_load(); $now = time();
+    if (($d['lock'] ?? 0) > $now)
+      return 'به‌دلیل تلاش‌های ناموفق موقتاً قفل است — چند دقیقه بعد تلاش کنید';
+    if (!pauth_configured()) return 'رمز تنظیم نشده — ابتدا راه‌اندازی را انجام دهید';
+    if (!password_verify($p, $d['ph'])) {
+      $d['attempts'] = array_values(array_filter($d['attempts'] ?? [], fn($t) => $t > $now - 600));
+      $d['attempts'][] = $now;
+      $cfg = require dirname(__DIR__, 2) . '/config.php';
+      if (count($d['attempts']) >= $cfg['security']['login_max_attempts']) {
+        $d['lock'] = $now + $cfg['security']['lockout_minutes'] * 60;
+        $d['attempts'] = [];
+      }
+      pauth_save($d);
+      return 'رمز اشتباه است';
     }
-    pauth_save($d);
-    return 'رمز اشتباه است';
+    $d['attempts'] = []; $d['lock'] = 0; pauth_save($d);
+    session_regenerate_id(true);
+    $_SESSION['plat'] = true;
+    $_SESSION['plat_role'] = 'admin';
+    $_SESSION['plat_user'] = $user === '' ? 'admin' : $user;
+    $_SESSION['plat_perms'] = ['all'];
+    return '';
   }
-  $d['attempts'] = []; $d['lock'] = 0; pauth_save($d);
-  session_regenerate_id(true);
-  $_SESSION['plat'] = true;
-  return '';
-}
 
+  // بررسی ورود پشتیبان‌ها
+  $file = __DIR__ . '/../../data/support-users.json';
+  if (is_file($file)) {
+    $users = json_decode((string)file_get_contents($file), true) ?: [];
+    foreach ($users as $u) {
+      if (strtolower($u['username'] ?? '') === strtolower($user) && password_verify($p, $u['ph'] ?? '')) {
+        session_regenerate_id(true);
+        $_SESSION['plat'] = true;
+        $_SESSION['plat_role'] = 'support';
+        $_SESSION['plat_user'] = $user;
+        $_SESSION['plat_perms'] = $u['perms'] ?? [];
+        return '';
+      }
+    }
+  }
+  return 'نام کاربری یا رمز اشتباه است';
+}
 function pauth_logged(): bool  { return !empty($_SESSION['plat']); }
 function pauth_require(): void { if (!pauth_logged()) { header('Location: index.php'); exit; } }
 function pauth_logout(): void  { unset($_SESSION['plat']); }
